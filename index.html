@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>E-Fahrzeug Temperaturrechner</title>
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230066cc'/%3E%3Cpath d='M256 80c-8.84 0-16 7.16-16 16v144H96c-8.84 0-16 7.16-16 16s7.16 16 16 16h144v144c0 8.84 7.16 16 16 16s16-7.16 16-16V272h144c8.84 0 16-7.16 16-16s-7.16-16-16-16H272V96c0-8.84-7.16-16-16-16z' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- Stylesheet -->
+    <style>
+        :root {
+            --primary-color: #1f77b4;
+            --secondary-color: #ff7f0e;
+            --background-color: #f5f5f7;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 12px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            font-weight: 600;
+            margin-top: 0;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(31, 119, 180, 0.2);
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .result-item {
+            background-color: rgba(31, 119, 180, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        
+        .result-item.warning {
+            background-color: rgba(255, 127, 14, 0.2);
+        }
+        
+        .result-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .result-warning {
+            color: #d9534f;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        
+        .temp-map {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            margin-top: 8px;
+        }
+        
+        .temp-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 250px;
+            margin-top: 16px;
+            position: relative;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background-color: rgba(0, 0, 0, 0.03);
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.01);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 16px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Steuergeräte-Temperaturberechnung</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="setActiveTab(0)">Eingabe</div>
+            <div class="tab" onclick="setActiveTab(1)">Ergebnisse</div>
+            <div class="tab" onclick="setActiveTab(2)">Diagramm</div>
+            <div class="tab" onclick="setActiveTab(3)">Info</div>
+        </div>
+        
+        <div class="tab-content active">
+            <div class="card">
+                <h2>Eingabeparameter</h2>
+                
+                <div class="form-group">
+                    <label for="powerLoss">Verlustleistung (W)</label>
+                    <input type="number" id="powerLoss" value="20" min="0.1" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="material">Material</label>
+                    <select id="material">
+                        <option value="Aluminium">Aluminium</option>
+                        <option value="PVC">PVC</option>
+                    </select>
+                </div>
+                
+                <h3>Gehäuseabmessungen</h3>
+                
+                <div class="form-group">
+                    <label for="length">Länge (mm)</label>
+                    <input type="number" id="length" value="200" min="1" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="width">Breite (mm)</label>
+                    <input type="number" id="width" value="100" min="1" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="height">Höhe (mm)</label>
+                    <input type="number" id="height" value="40" min="1" step="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="thickness">Materialdicke (mm)</label>
+                    <input type="number" id="thickness" value="1" min="0.1" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="ambientTemp">Umgebungstemperatur (°C)</label>
+                    <input type="number" id="ambientTemp" value="25" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxTempWarning">Max. Temperatur Warnung (°C)</label>
+                    <input type="number" id="maxTempWarning" value="85" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="convectionType">Konvektion</label>
+                    <select id="convectionType">
+                        <option value="natürlich">Natürliche Konvektion</option>
+                        <option value="erzwungen">Erzwungene Konvektion</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="powerDistribution">Leistungsverteilung</label>
+                    <select id="powerDistribution">
+                        <option value="homogen">Homogen</option>
+                        <option value="punktuell">Punktuell</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="surroundings">Umgebung</label>
+                    <select id="surroundings">
+                        <option value="offen">Offen</option>
+                        <option value="geschlossen">Geschlossen</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content">
+            <div class="card">
+                <h2>Berechnungsergebnisse</h2>
+                
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="result-label">Material</div>
+                        <div class="result-value" id="resultMaterial">Aluminium</div>
+                    </div>
+                    
+                    <div class="result-item" id="tempResultItem">
+                        <div class="result-label">Gehäusetemperatur</div>
+                        <div class="result-value" id="resultTemp">42.35 °C</div>
+                        <div class="result-warning" id="tempWarning" style="display: none;">
+                            ⚠️ Maximaltemp. überschritten
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <div class="result-label">Temperaturanstieg</div>
+                        <div class="result-value" id="resultTempIncrease">17.35 °C</div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <div class="result-label">Wärmeübergang</div>
+                        <div class="result-value" id="resultConvection">5 W/(m²·K)</div>
+                    </div>
+                </div>
+                
+                <h3>Temperaturverteilung</h3>
+                <div class="temp-map" id="tempMap"></div>
+            </div>
+            
+            <div class="card">
+                <h2>Tabellarische Übersicht</h2>
+                <div style="overflow-x: auto;">
+                    <table id="resultTable">
+                        <thead>
+                            <tr>
+                                <th>Umgebungstemp. (°C)</th>
+                                <th>Aluminium (°C)</th>
+                                <th>PVC (°C)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Wird mit JavaScript gefüllt -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content">
+            <div class="card">
+                <h2>Temperaturanalyse</h2>
+                <div class="chart-container">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content">
+            <div class="card">
+                <h2>Technische Details</h2>
+                
+                <p>Dieses Programm verwendet ein vereinfachtes Modell zur thermischen Analyse von Steuergerätegehäusen.</p>
+                
+                <h3>Berechnungsgrundlagen</h3>
+                <p>Die Wärmeübertragung wird über folgende Mechanismen berücksichtigt:</p>
+                <ul>
+                    <li>Wärmeleitung durch das Gehäusematerial</li>
+                    <li>Konvektive Wärmeübertragung an den Außenflächen</li>
+                    <li>Vereinfachte Betrachtung der Strahlungsverluste</li>
+                </ul>
+                
+                <h3>Materialeigenschaften</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th>Wärmeleitfähigkeit (W/(m·K))</th>
+                            <th>Emissionsgrad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Aluminium</td>
+                            <td>237</td>
+                            <td>0.09</td>
+                        </tr>
+                        <tr>
+                            <td>PVC</td>
+                            <td>0.19</td>
+                            <td>0.9</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Temperaturberechnungsprogramm für Steuergeräte in E-Fahrzeugen
+        </div>
+    </div>
+    
+    <!-- Chart.js für Diagramme -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script>
+        // Material-Definitionen
+        const MATERIALS = {
+            'Aluminium': {
+                thermalConductivity: 237,
+                density: 2700,
+                specificHeat: 900,
+                emissivity: 0.09,
+                name: 'Aluminium',
+                color: '#1f77b4'
+            },
+            'PVC': {
+                thermalConductivity: 0.19,
+                density: 1380,
+                specificHeat: 1000,
+                emissivity: 0.9,
+                name: 'PVC',
+                color: '#ff7f0e'
+            }
+        };
+
+        // Konstanten für Wärmeübertragung
+        const STEFAN_BOLTZMANN = 5.67e-8; // Stefan-Boltzmann-Konstante in W/(m²·K⁴)
+        const NATURAL_CONV_COEFF = 5; // Natürlicher Konvektionskoeffizient in W/(m²·K)
+        const FORCED_CONV_COEFF = 25; // Erzwungener Konvektionskoeffizient in W/(m²·K)
+        
+        // Chart-Instanz
+        let temperatureChart;
+        
+        // Alle Eingabefelder
+        const inputElements = [
+            'powerLoss', 'material', 'length', 'width', 'height', 
+            'thickness', 'ambientTemp', 'maxTempWarning', 
+            'convectionType', 'powerDistribution', 'surroundings'
+        ];
+        
+        // Tab-Funktionalität
+        function setActiveTab(index) {
+            // Tabs aktualisieren
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                if (i === index) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Inhalte aktualisieren
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                if (i === index) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+            
+            // Bei Wechsel zum Diagramm-Tab, Chart neu laden
+            if (index === 2) {
+                if (temperatureChart) {
+                    temperatureChart.update();
+                }
+            }
+        }
+        
+        // Ereignislistener für alle Eingabefelder hinzufügen
+        function setupEventListeners() {
+            inputElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateTemperature);
+                }
+            });
+        }
+        
+        // Berechnung der Gehäusetemperatur
+        function calculateTemperature() {
+            // Eingabewerte auslesen
+            const powerLoss = parseFloat(document.getElementById('powerLoss').value);
+            const material = document.getElementById('material').value;
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const thickness = parseFloat(document.getElementById('thickness').value);
+            const ambientTemp = parseFloat(document.getElementById('ambientTemp').value);
+            const maxTempWarning = parseFloat(document.getElementById('maxTempWarning').value);
+            const convectionType = document.getElementById('convectionType').value;
+            const powerDistribution = document.getElementById('powerDistribution').value;
+            
+            // Umwandlung der Einheiten: mm -> m
+            const lengthM = length / 1000;
+            const widthM = width / 1000;
+            const heightM = height / 1000;
+            const thicknessM = thickness / 1000;
+            
+            // Berechnung der Oberfläche in m²
+            const surfaceArea = 2 * (lengthM * widthM + lengthM * heightM + widthM * heightM);
+            
+            // Auswahl des Wärmeübergangskoeffizienten basierend auf der Konvektionsart
+            const convectionCoeff = convectionType === 'natürlich' ? NATURAL_CONV_COEFF : FORCED_CONV_COEFF;
+            
+            // Berechnung des thermischen Widerstands für Konvektion
+            const convectionResistance = 1 / (convectionCoeff * surfaceArea);
+            
+            // Berechnung der Wärmeleitung durch das Material
+            const materialResistance = thicknessM / (MATERIALS[material].thermalConductivity * surfaceArea);
+            
+            // Gesamtwärmewiderstand
+            const totalResistance = convectionResistance + materialResistance;
+            
+            // Berechnung der Temperaturerhöhung (ΔT = P * R)
+            const temperatureIncrease = powerLoss * totalResistance;
+            
+            // Berechnung der Gehäusetemperatur
+            const caseTemperature = ambientTemp + temperatureIncrease;
+            
+            // Ergebnisse anzeigen
+            updateResults(material, caseTemperature, temperatureIncrease, convectionCoeff, maxTempWarning);
+            
+            // Temperaturverteilung berechnen und anzeigen
+            calculateTemperatureDistribution(caseTemperature, temperatureIncrease, powerDistribution, ambientTemp);
+            
+            // Vergleichsdaten berechnen und anzeigen
+            calculateComparisonData(surfaceArea, convectionCoeff, thicknessM, powerLoss, ambientTemp);
+        }
+        
+        // Ergebnisse aktualisieren
+        function updateResults(material, caseTemperature, temperatureIncrease, convectionCoeff, maxTempWarning) {
+            document.getElementById('resultMaterial').textContent = material;
+            document.getElementById('resultTemp').textContent = caseTemperature.toFixed(2) + ' °C';
+            document.getElementById('resultTempIncrease').textContent = temperatureIncrease.toFixed(2) + ' °C';
+            document.getElementById('resultConvection').textContent = convectionCoeff + ' W/(m²·K)';
+            
+            // Temperaturwarnung
+            const showWarning = caseTemperature > maxTempWarning;
+            document.getElementById('tempWarning').style.display = showWarning ? 'block' : 'none';
+            
+            const tempResultItem = document.getElementById('tempResultItem');
+            if (showWarning) {
+                tempResultItem.classList.add('warning');
+            } else {
+                tempResultItem.classList.remove('warning');
+            }
+        }
+        
+        // Temperaturverteilung berechnen und visualisieren
+        function calculateTemperatureDistribution(caseTemperature, temperatureIncrease, powerDistribution, ambientTemp) {
+            const grid = 5; // 5x5 Grid
+            const tempMap = document.getElementById('tempMap');
+            tempMap.innerHTML = '';
+            
+            for (let i = 0; i < grid; i++) {
+                for (let j = 0; j < grid; j++) {
+                    let cellTemp = caseTemperature;
+                    
+                    // Bei punktueller Verteilung: höchste Temperatur in der Mitte, abnehmend zum Rand
+                    if (powerDistribution === 'punktuell') {
+                        const centerX = 2;
+                        const centerY = 2;
+                        const distance = Math.sqrt(Math.pow(i - centerX, 2) + Math.pow(j - centerY, 2)) / Math.sqrt(8);
+                        cellTemp = caseTemperature - (distance * temperatureIncrease * 0.5);
+                    }
+                    
+                    // Farbintensität basierend auf Temperatur
+                    const intensity = Math.min(255, Math.max(0, Math.round((cellTemp - ambientTemp) * 5)));
+                    const cellColor = `rgba(255, ${255 - intensity}, 0, 0.7)`;
+                    const textColor = intensity > 128 ? 'white' : 'black';
+                    
+                    const cell = document.createElement('div');
+                    cell.className = 'temp-cell';
+                    cell.style.backgroundColor = cellColor;
+                    cell.style.color = textColor;
+                    cell.textContent = cellTemp.toFixed(1);
+                    
+                    tempMap.appendChild(cell);
+                }
+            }
+        }
+        
+        // Vergleichsdaten für verschiedene Materialien und Umgebungstemperaturen berechnen
+        function calculateComparisonData(surfaceArea, convectionCoeff, thicknessM, powerLoss, ambientTemp) {
+            const ambientTempRange = [25, 30, 35, 40, 45, 50, 55];
+            const tableBody = document.getElementById('resultTable').querySelector('tbody');
+            tableBody.innerHTML = '';
+            
+            const chartData = {
+                labels: ambientTempRange,
+                datasets: []
+            };
+            
+            // Für jedes Material eine Dataset für das Chart erstellen
+            Object.keys(MATERIALS).forEach(mat => {
+                chartData.datasets.push({
+                    label: mat,
+                    data: [],
+                    borderColor: MATERIALS[mat].color,
+                    backgroundColor: MATERIALS[mat].color + '33',
+                    tension: 0.2
+                });
+            });
+            
+            // Für jede Umgebungstemperatur eine Tabellenzeile erstellen
+            ambientTempRange.forEach(temp => {
+                const row = document.createElement('tr');
+                const tempCell = document.createElement('td');
+                tempCell.textContent = temp;
+                row.appendChild(tempCell);
+                
+                // Für jedes Material die Gehäusetemperatur berechnen
+                Object.keys(MATERIALS).forEach((mat, index) => {
+                    // Materialspezifischer Wärmewiderstand
+                    const matResistance = thicknessM / (MATERIALS[mat].thermalConductivity * surfaceArea);
+                    const totalResistance = 1 / (convectionCoeff * surfaceArea) + matResistance;
+                    
+                    // Temperaturerhöhung und Gehäusetemperatur
+                    const tempIncrease = powerLoss * totalResistance;
+                    const caseTemp = temp + tempIncrease;
+                    
+                    // Tabellenzelle erstellen
+                    const matCell = document.createElement('td');
+                    matCell.textContent = caseTemp.toFixed(2);
+                    row.appendChild(matCell);
+                    
+                    // Daten zum Chart hinzufügen
+                    chartData.datasets[index].data.push(caseTemp);
+                });
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Chart aktualisieren oder erstellen
+            updateChart(chartData);
+        }
+        
+        // Chart erstellen oder aktualisieren
+        function updateChart(data) {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            
+            if (temperatureChart) {
+                temperatureChart.data = data;
+                temperatureChart.update();
+            } else {
+                temperatureChart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.raw.toFixed(2) + ' °C';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Umgebungstemperatur (°C)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Gehäusetemperatur (°C)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Initialisierung
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            calculateTemperature();
+        });
+    </script>
+</body>
+</html>
