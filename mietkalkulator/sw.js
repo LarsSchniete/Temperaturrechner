@@ -1,5 +1,5 @@
 // Offline-Cache: bei Aenderungen an den Dateien die Versionsnummer erhoehen
-const CACHE = 'mietkalkulator-v1';
+const CACHE = 'mietkalkulator-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -26,7 +26,14 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Online immer die neueste Version laden, offline auf den Cache zurueckgreifen
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
