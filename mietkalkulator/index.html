@@ -168,6 +168,12 @@
       font-weight: 700;
       color: var(--accent);
     }
+    .hint {
+      display: block;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
     .badge {
       font-size: 12px;
       color: var(--text-sub);
@@ -208,7 +214,14 @@
         <option value="8.70" selected>Teilrenoviert [8,70 €/m²]</option>
         <option value="9.30">Vollständig renoviert [9,30 €/m²]</option>
         <option value="10.40">Erstbezug / Kernsaniert [10,40 €/m²]</option>
+        <option value="custom">Eigener Preis</option>
       </select>
+    </div>
+
+    <div class="form-group" id="custom-rate-group" style="display:none">
+      <label for="custom-rate">Eigener Quadratmeterpreis kalt (€/m²)</label>
+      <input type="number" inputmode="decimal" id="custom-rate" value="9.00" min="0" step="0.05" oninput="calculate()">
+      <span class="hint">Wird unverändert verwendet, ohne Lagezuschlag.</span>
     </div>
   </div>
 
@@ -270,7 +283,7 @@
   <script>
     // Zuletzt verwendete Eingaben merken
     const STORAGE_KEY = 'mietkalkulator-eingaben';
-    const FIELDS = ['living-area', 'location', 'renovation', 'terrace-area', 'terrace-factor'];
+    const FIELDS = ['living-area', 'location', 'renovation', 'custom-rate', 'terrace-area', 'terrace-factor'];
 
     function saveInputs() {
       try {
@@ -310,8 +323,15 @@
       const terraceArea = parseFloat(document.getElementById('terrace-area').value) || 0;
       const terraceFactor = parseFloat(document.getElementById('terrace-factor').value) || 0.25;
 
-      const basePrice = parseFloat(document.getElementById('renovation').value) || 8.70;
-      const locationOffset = parseFloat(document.getElementById('location').value) || 0.00;
+      const renovation = document.getElementById('renovation').value;
+      const isCustom = renovation === 'custom';
+      document.getElementById('custom-rate-group').style.display = isCustom ? 'block' : 'none';
+
+      // Eigener Preis gilt als Endpreis, daher ohne Lagezuschlag
+      const basePrice = isCustom
+        ? (parseFloat(document.getElementById('custom-rate').value) || 0)
+        : (parseFloat(renovation) || 8.70);
+      const locationOffset = isCustom ? 0 : (parseFloat(document.getElementById('location').value) || 0.00);
 
       // Anrechenbare Fläche
       const creditedTerraceArea = hasTerrace ? (terraceArea * terraceFactor) : 0;
