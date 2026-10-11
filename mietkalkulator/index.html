@@ -69,7 +69,7 @@
       letter-spacing: -0.2px;
       margin-bottom: 6px;
     }
-    input[type="number"], select {
+    input[type="number"], input[type="text"], select {
       width: 100%;
       height: 44px;
       padding: 8px 12px;
@@ -80,7 +80,7 @@
       outline: none;
       -webkit-appearance: none;
     }
-    input[type="number"]:focus, select:focus {
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
       border-color: var(--accent);
     }
     .toggle-row {
@@ -131,7 +131,7 @@
     input:checked + .slider:before {
       transform: translateX(20px);
     }
-    #terrace-details {
+    #terrace-details, #custom-details {
       display: none;
       margin-top: 12px;
       padding-top: 12px;
@@ -174,6 +174,15 @@
       color: var(--text-sub);
       margin-top: 6px;
     }
+    select:disabled {
+      opacity: 0.4;
+    }
+    .version {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin: 16px 0 8px 0;
+    }
     .badge {
       font-size: 12px;
       color: var(--text-sub);
@@ -214,14 +223,27 @@
         <option value="8.70" selected>Teilrenoviert [8,70 €/m²]</option>
         <option value="9.30">Vollständig renoviert [9,30 €/m²]</option>
         <option value="10.40">Erstbezug / Kernsaniert [10,40 €/m²]</option>
-        <option value="custom">Eigener Preis</option>
       </select>
     </div>
 
-    <div class="form-group" id="custom-rate-group" style="display:none">
-      <label for="custom-rate">Eigener Quadratmeterpreis kalt (€/m²)</label>
-      <input type="number" inputmode="decimal" id="custom-rate" value="9.00" min="0" step="0.05" oninput="calculate()">
-      <span class="hint">Wird unverändert verwendet, ohne Lagezuschlag.</span>
+  </div>
+
+  <!-- Eigener Preis -->
+  <div class="card">
+    <div class="toggle-row">
+      <span class="toggle-label">Eigenen m²-Preis verwenden</span>
+      <label class="switch">
+        <input type="checkbox" id="custom-toggle" onchange="toggleCustom()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div id="custom-details">
+      <div class="form-group">
+        <label for="custom-rate">Eigener Quadratmeterpreis kalt (€/m²)</label>
+        <input type="text" inputmode="decimal" id="custom-rate" value="9,00" autocomplete="off" oninput="calculate()">
+        <span class="hint">Ersetzt Renovierungsgrad und Lagezuschlag. Komma oder Punkt möglich.</span>
+      </div>
     </div>
   </div>
 
@@ -280,6 +302,8 @@
     </div>
   </div>
 
+  <p class="version">Version 3</p>
+
   <script>
     // Zuletzt verwendete Eingaben merken
     const STORAGE_KEY = 'mietkalkulator-eingaben';
@@ -287,7 +311,10 @@
 
     function saveInputs() {
       try {
-        const data = { terrace: document.getElementById('terrace-toggle').checked };
+        const data = {
+          terrace: document.getElementById('terrace-toggle').checked,
+          custom: document.getElementById('custom-toggle').checked
+        };
         FIELDS.forEach((id) => {
           const el = document.getElementById(id);
           data[id] = el.tagName === 'SELECT' ? el.selectedIndex : el.value;
@@ -303,11 +330,12 @@
         FIELDS.forEach((id) => {
           if (data[id] === undefined) return;
           const el = document.getElementById(id);
-          if (el.tagName === 'SELECT') el.selectedIndex = data[id];
-          else el.value = data[id];
+          if (el.tagName !== 'SELECT') el.value = data[id];
+          else if (data[id] >= 0 && data[id] < el.options.length) el.selectedIndex = data[id];
         });
         document.getElementById('terrace-toggle').checked = !!data.terrace;
         document.getElementById('terrace-details').style.display = data.terrace ? 'block' : 'none';
+        document.getElementById('custom-toggle').checked = !!data.custom;
       } catch (e) {}
     }
 
@@ -317,20 +345,32 @@
       calculate();
     }
 
+    function toggleCustom() {
+      calculate();
+      if (document.getElementById('custom-toggle').checked) {
+        document.getElementById('custom-rate').focus();
+      }
+    }
+
+    function parseNumber(value) {
+      return parseFloat(String(value).replace(',', '.'));
+    }
+
     function calculate() {
       const livingArea = parseFloat(document.getElementById('living-area').value) || 0;
       const hasTerrace = document.getElementById('terrace-toggle').checked;
       const terraceArea = parseFloat(document.getElementById('terrace-area').value) || 0;
       const terraceFactor = parseFloat(document.getElementById('terrace-factor').value) || 0.25;
 
-      const renovation = document.getElementById('renovation').value;
-      const isCustom = renovation === 'custom';
-      document.getElementById('custom-rate-group').style.display = isCustom ? 'block' : 'none';
+      const isCustom = document.getElementById('custom-toggle').checked;
+      document.getElementById('custom-details').style.display = isCustom ? 'block' : 'none';
+      document.getElementById('renovation').disabled = isCustom;
+      document.getElementById('location').disabled = isCustom;
 
       // Eigener Preis gilt als Endpreis, daher ohne Lagezuschlag
       const basePrice = isCustom
-        ? (parseFloat(document.getElementById('custom-rate').value) || 0)
-        : (parseFloat(renovation) || 8.70);
+        ? (parseNumber(document.getElementById('custom-rate').value) || 0)
+        : (parseFloat(document.getElementById('renovation').value) || 8.70);
       const locationOffset = isCustom ? 0 : (parseFloat(document.getElementById('location').value) || 0.00);
 
       // Anrechenbare Fläche
@@ -372,7 +412,9 @@
     // Offline-Fähigkeit
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+          .then((reg) => reg.update())
+          .catch(() => {});
       });
     }
   </script>
