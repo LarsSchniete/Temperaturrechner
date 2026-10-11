@@ -286,6 +286,9 @@
     <h2>Marktvergleich</h2>
     <div class="card" id="w-markt"></div>
 
+    <h2>Vergleichbare Inserate</h2>
+    <div class="card" id="w-vergleich"></div>
+
     <h2>Was wäre, wenn …</h2>
     <div class="card" id="w-szenario"></div>
 
@@ -379,7 +382,7 @@
     <div class="card" id="r-ergebnis"></div>
   </section>
 
-  <p class="version">Version 5</p>
+  <p class="version">Version 6</p>
 
   <nav class="tabbar">
     <button id="tab-haus" class="active" onclick="zeige('haus')">
@@ -639,7 +642,28 @@
         ${a.nkRate > markt.nebenkosten.gesamtSchnitt * 1.2 ? `<p class="hint">Vorauszahlungen dürfen nur in angemessener Höhe vereinbart werden (§ 556 Abs. 2 BGB). Liegen eure tatsächlichen Kosten niedriger, senkt eine realistische Vorauszahlung die Warmmiete in der Anzeige, ohne dass ihr Geld verliert.</p>` : ''}
         <div class="row total"><span class="l">Warmmiete aktuell</span><span class="v">${euro(a.warm)}</span></div>`;
 
+      renderVergleich(w, a);
       renderSzenario();
+    }
+
+    function inseratZeile(x, eigeneRate) {
+      const rate = x.kalt / x.flaeche;
+      const diff = eigeneRate != null ? Math.round((eigeneRate / rate - 1) * 100) : null;
+      return `<div class="row">
+        <span class="l">${esc(x.ort)} · ${fmtM2.format(x.flaeche)} m² · ${esc(x.zimmer)} Zi.
+          <span class="sub">${x.text ? esc(x.text) + ' · ' : ''}<span class="source"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.quelle)}</a></span></span></span>
+        <span class="v">${euro(x.kalt)}<span class="sub">${proM2(rate)}${diff != null ? ` · ihr ${diff >= 0 ? '+' : ''}${diff} %` : ''}</span></span>
+      </div>`;
+    }
+
+    function renderVergleich(w, a) {
+      const liste = (markt.inserate || [])
+        .filter((x) => Math.abs(x.flaeche - w.flaeche) <= w.flaeche * 0.25)
+        .sort((x, y) => (y.ort === 'Hohenaspe') - (x.ort === 'Hohenaspe') || Math.abs(x.flaeche - w.flaeche) - Math.abs(y.flaeche - w.flaeche));
+      document.getElementById('w-vergleich').innerHTML = liste.length
+        ? liste.map((x) => inseratZeile(x, a.rate)).join('') +
+          `<span class="hint">Ähnliche Größe (± 25 %), Kaltmiete. „ihr“ = euer m²-Preis im Vergleich. Stand ${datum(markt.stand)}.</span>`
+        : '<span class="hint">Keine Inserate mit ähnlicher Größe in den Marktdaten.</span>';
     }
 
     function nkPill(rate) {
@@ -740,6 +764,15 @@
             </div>
           </div>
         </div>
+
+        <h2>Konkurrenz live ansehen</h2>
+        <div class="card">
+          ${(markt.portale || []).map((x) => `<div class="row source"><span class="l"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name)}</a></span><span class="v chev">›</span></div>`).join('')}
+          <span class="hint">Öffnet die aktuelle Suche auf dem Portal. So seht ihr, was Interessenten gerade sehen.</span>
+        </div>
+
+        <h2>Aktuelle Inserate (Stand ${datum(markt.stand)})</h2>
+        <div class="card">${(markt.inserate || []).map((x) => inseratZeile(x, null)).join('')}</div>
 
         <h2>Vergleichswerte (Angebotsmieten kalt)</h2>
         <div class="card">${vergleich}</div>
