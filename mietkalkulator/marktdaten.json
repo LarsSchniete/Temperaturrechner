@@ -1,20 +1,51 @@
 {
   "stand": "2026-10-11",
   "ort": "Hohenaspe",
-  "basis": 8.90,
-  "basisBegruendung": "Hohenaspe-Werte liegen bei 8,45 bis 8,87 €/m², aktuelle Inserate im Ort bei etwa 8,00 bis 10,30 €/m². Itzehoe als Stadt liegt mit 8,44 bis 9,77 €/m² etwas höher. Basiswert: mittlere Wohnung, normaler Zustand, Hohenaspe.",
-  "spanne": [7.50, 10.50],
+  "basis": 8.7,
+  "basisBegruendung": "Hohenaspe: Portaldurchschnitt 8,45 bis 8,87 €/m², aktuelle Inserate im Ort etwa 6,70 bis 10,30 €/m² (Mittel rund 8,60 €/m²). Itzehoe liegt als Stadt mit 8,44 bis 9,77 €/m² etwas höher. Basiswert: mittelgroße Wohnung, normaler Zustand, Hohenaspe. Angebotsmieten liegen erfahrungsgemäß etwas über den tatsächlich vereinbarten Mieten.",
+  "spanne": [
+    6.7,
+    10.5
+  ],
   "groesse": [
-    { "bis": 50, "faktor": 1.08, "text": "unter 50 m²" },
-    { "bis": 70, "faktor": 1.03, "text": "50 bis 69 m²" },
-    { "bis": 90, "faktor": 1.00, "text": "70 bis 89 m²" },
-    { "bis": 100000, "faktor": 0.97, "text": "ab 90 m²" }
+    {
+      "bis": 50,
+      "faktor": 1.08,
+      "text": "unter 50 m²"
+    },
+    {
+      "bis": 70,
+      "faktor": 1.03,
+      "text": "50 bis 69 m²"
+    },
+    {
+      "bis": 90,
+      "faktor": 1.0,
+      "text": "70 bis 89 m²"
+    },
+    {
+      "bis": 100000,
+      "faktor": 0.97,
+      "text": "ab 90 m²"
+    }
   ],
   "zustand": {
-    "einfach": { "faktor": 0.90, "text": "Einfach / älterer Bestand" },
-    "normal": { "faktor": 1.00, "text": "Normal / gepflegt" },
-    "gut": { "faktor": 1.08, "text": "Gut / renoviert" },
-    "neuwertig": { "faktor": 1.17, "text": "Neuwertig / kernsaniert" }
+    "einfach": {
+      "faktor": 0.9,
+      "text": "Einfach / älterer Bestand"
+    },
+    "normal": {
+      "faktor": 1.0,
+      "text": "Normal / gepflegt"
+    },
+    "gut": {
+      "faktor": 1.08,
+      "text": "Gut / renoviert"
+    },
+    "neuwertig": {
+      "faktor": 1.17,
+      "text": "Neuwertig / kernsaniert"
+    }
   },
   "nebenkosten": {
     "bkSchnitt": 1.35,
@@ -26,18 +57,54 @@
     "url": "https://mieterbund.de/aktuelles/meldungen/aktueller-betriebskostenspiegel-fuer-deutschland/"
   },
   "vergleich": [
-    { "name": "Hohenaspe, Ø Angebotsmiete 2026", "wert": 8.87, "quelle": "miet-check.de", "url": "https://www.miet-check.de/wohnung-mieten/hohenaspe/" },
-    { "name": "Hohenaspe, Wohnlage Schöne Aussicht, Q1/2026", "wert": 8.45, "quelle": "ImmoScout24 Atlas", "url": "https://atlas.immobilienscout24.de/orte/deutschland/schleswig-holstein/steinburg-kreis/hohenaspe/sch%C3%B6ne-aussicht" },
-    { "name": "Hohenaspe, aktuelle Inserate Okt. 2026", "text": "ca. 8,00 bis 10,30", "quelle": "immosuchmaschine.de / wohnungsboerse.net", "url": "https://www.immosuchmaschine.de/g/25582-hohenaspe/wohnung-mieten" },
-    { "name": "Itzehoe, Q2/2026", "wert": 8.86, "quelle": "ImmoScout24", "url": "https://www.immobilienscout24.de/immobilienpreise/schleswig-holstein/steinburg-kreis/itzehoe/mietspiegel" },
-    { "name": "Itzehoe, mittlere Lage 2026", "wert": 8.44, "quelle": "immoportal.com", "url": "https://www.immoportal.com/mietspiegel/itzehoe" },
-    { "name": "Itzehoe, Angebote Sept. 2026", "wert": 9.77, "quelle": "Engel & Völkers", "url": "https://www.engelvoelkers.com/de-de/mietspiegel/schleswig-holstein/itzehoe/" },
-    { "name": "Kreis Steinburg, Ø Inserate 2026", "wert": 9.93, "quelle": "ohne-makler.net", "url": "https://www.ohne-makler.net/mietspiegel/schleswig-holstein/kreis-steinburg/" }
+    {
+      "name": "Hohenaspe, Ø Angebotsmiete 2026",
+      "wert": 8.87,
+      "quelle": "miet-check.de",
+      "url": "https://www.miet-check.de/wohnung-mieten/hohenaspe/"
+    },
+    {
+      "name": "Hohenaspe, Wohnlage Schöne Aussicht, Q1/2026",
+      "wert": 8.45,
+      "quelle": "ImmoScout24 Atlas",
+      "url": "https://atlas.immobilienscout24.de/orte/deutschland/schleswig-holstein/steinburg-kreis/hohenaspe/sch%C3%B6ne-aussicht"
+    },
+    {
+      "name": "Hohenaspe, Einzelinserate Okt. 2026 (4 Stück)",
+      "text": "ca. 6,70 bis 10,30",
+      "quelle": "immosuchmaschine.de / wohnungsboerse.net",
+      "url": "https://www.immosuchmaschine.de/g/25582-hohenaspe/wohnung-mieten"
+    },
+    {
+      "name": "Itzehoe, Q2/2026",
+      "wert": 8.86,
+      "quelle": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/immobilienpreise/schleswig-holstein/steinburg-kreis/itzehoe/mietspiegel"
+    },
+    {
+      "name": "Itzehoe, mittlere Lage 2026",
+      "wert": 8.44,
+      "quelle": "immoportal.com",
+      "url": "https://www.immoportal.com/mietspiegel/itzehoe"
+    },
+    {
+      "name": "Itzehoe, Angebote Sept. 2026",
+      "wert": 9.77,
+      "quelle": "Engel & Völkers",
+      "url": "https://www.engelvoelkers.com/de-de/mietspiegel/schleswig-holstein/itzehoe/"
+    },
+    {
+      "name": "Kreis Steinburg, Ø Inserate 2026",
+      "wert": 9.93,
+      "quelle": "ohne-makler.net",
+      "url": "https://www.ohne-makler.net/mietspiegel/schleswig-holstein/kreis-steinburg/"
+    }
   ],
   "hinweise": [
     "Alle Werte sind Angebotsmieten aus Immobilienportalen. Für Hohenaspe gibt es keinen amtlichen Mietspiegel.",
     "In Hohenaspe werden nur sehr wenige Wohnungen inseriert. Einzelwerte schwanken deshalb stark.",
-    "Größen- und Zustandsfaktoren sind fachliche Schätzwerte und können in der App angepasst werden.",
-    "Eine Mietpreisbremse gilt in Schleswig-Holstein seit 2019 nicht mehr."
+    "Größen- und Zustandsfaktoren sind fachliche Schätzwerte. Die Portale zeigen beim Größeneinfluss kein einheitliches Bild.",
+    "Eine Mietpreisbremse gilt in Schleswig-Holstein seit 2019 nicht mehr (Stand 2026). Bei Neuvermietung ist die Miethöhe weitgehend frei vereinbar. Grenzen setzen nur die Mietpreisüberhöhung (§ 5 WiStG) und der Mietwucher (§ 291 StGB).",
+    "Die abgesenkte Kappungsgrenze von 15 % (seit 1.5.2024) betrifft nur Mieterhöhungen in laufenden Verträgen und nach den verfügbaren Listen weder Hohenaspe noch Itzehoe."
   ]
 }
