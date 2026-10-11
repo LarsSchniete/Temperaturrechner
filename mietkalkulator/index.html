@@ -421,7 +421,7 @@
     <div id="e-inhalt"></div>
   </section>
 
-  <p class="version">Version 7</p>
+  <p class="version">Version 8</p>
 
   <nav class="tabbar">
     <button id="tab-haus" class="active" onclick="zeige('haus')">
@@ -1026,6 +1026,28 @@
 
     // Datenaustausch: alle Eingaben als Textcode, Unicode-sicher kodiert
     const DATEN_PREFIX = 'MIETKALKULATOR-DATEN:';
+    const DATEN_ENDE = '#ENDE';
+
+    // Liest den Datencode robust ein: Messenger fügen beim Kopieren teils Zeilenumbrüche,
+    // Leerzeichen oder unsichtbare Zeichen ein. Alles außer Base64-Zeichen wird entfernt.
+    function paketLesen(roh) {
+      const text = String(roh);
+      const start = text.toUpperCase().indexOf(DATEN_PREFIX);
+      let teil = start >= 0 ? text.slice(start + DATEN_PREFIX.length) : text;
+      const ende = teil.indexOf(DATEN_ENDE);
+      if (ende >= 0) teil = teil.slice(0, ende);
+      let code = teil.replace(/[^A-Za-z0-9+/=]/g, '');
+      // Ohne Endmarke (ältere Version) evtl. angehängten Text abschneiden
+      for (let i = 0; i < 400 && code.length > 20; i++) {
+        try {
+          const paket = JSON.parse(vonBase64(code));
+          if (paket && Array.isArray(paket.wohnungen)) return paket;
+        } catch (e) {}
+        if (ende >= 0) break;
+        code = code.slice(0, -1);
+      }
+      throw new Error('ungültig');
+    }
     function zuBase64(text) {
       const bytes = new TextEncoder().encode(text);
       let bin = '';
@@ -1038,22 +1060,18 @@
 
     function datenSenden() {
       const paket = { v: 1, datum: new Date().toISOString(), wohnungen, eigeneBasis, faktoren, eigeneInserate };
-      const text = DATEN_PREFIX + zuBase64(JSON.stringify(paket));
+      const text = DATEN_PREFIX + zuBase64(JSON.stringify(paket)) + DATEN_ENDE;
       if (navigator.share) {
-        navigator.share({ title: 'Mietkalkulator-Daten', text }).catch(() => {});
+        navigator.share({ text }).catch(() => {});
       } else if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(() => alert('Daten in die Zwischenablage kopiert.'));
       }
     }
 
     function datenUebernehmen() {
-      const roh = document.getElementById('e-import').value.trim();
-      const start = roh.indexOf(DATEN_PREFIX);
+      const roh = document.getElementById('e-import').value;
       try {
-        if (start < 0) throw new Error('kein Code');
-        const code = roh.slice(start + DATEN_PREFIX.length).split(/\s/)[0];
-        const paket = JSON.parse(vonBase64(code));
-        if (!Array.isArray(paket.wohnungen)) throw new Error('ungültig');
+        const paket = paketLesen(roh);
         const vom = new Date(paket.datum).toLocaleString('de-DE');
         if (!confirm(`Daten vom ${vom} übernehmen? Die Eingaben auf diesem iPhone werden ersetzt.`)) return;
         wohnungen = paket.wohnungen;
@@ -1067,7 +1085,7 @@
         alert('Daten übernommen.');
         zeige('haus');
       } catch (e) {
-        alert('Die eingefügten Daten konnten nicht gelesen werden. Bitte die komplette Nachricht kopieren und erneut einfügen.');
+        alert(`Die eingefügten Daten konnten nicht gelesen werden (${roh.length} Zeichen eingefügt). Bitte in WhatsApp die Nachricht lange drücken, „Kopieren“ wählen und erneut einfügen. Hilft das nicht, auf dem anderen iPhone die App neu öffnen und die Daten noch einmal senden.`);
       }
     }
 
