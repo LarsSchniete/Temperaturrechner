@@ -104,6 +104,32 @@
       letter-spacing: -0.2px;
       margin-bottom: 6px;
     }
+    textarea {
+      width: 100%;
+      min-height: 70px;
+      padding: 10px 12px;
+      font-size: 16px;
+      color: var(--text-main);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      background: var(--field-bg);
+      outline: none;
+      -webkit-appearance: none;
+      resize: vertical;
+    }
+    .del {
+      border: none;
+      background: none;
+      color: var(--red);
+      font-size: 14px;
+      padding: 4px 0 0 0;
+      cursor: pointer;
+    }
+    .steps { margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.5; }
+    .steps li { margin-bottom: 6px; }
+    .faktor-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--divider); }
+    .faktor-row:last-child { border-bottom: none; }
+
     input[type="text"], input[type="month"], select {
       width: 100%;
       height: 44px;
@@ -258,6 +284,8 @@
     }
     nav.tabbar button svg { display: block; margin: 0 auto 3px auto; width: 26px; height: 26px; }
     nav.tabbar button.active { color: var(--accent); }
+    .faktor-row span { flex: 1; font-size: 15px; color: var(--text-sub); }
+    .faktor-row input[type="text"] { flex: 0 0 90px; width: 90px; text-align: right; }
   </style>
 </head>
 <body>
@@ -266,12 +294,13 @@
   <section id="view-haus" class="view active">
     <header>
       <h1>Unser Haus</h1>
-      <p class="subtitle">4 Wohnungen in Hohenaspe</p>
+      <p class="subtitle" id="haus-untertitel">Wohnungen in Hohenaspe</p>
     </header>
     <div id="markt-banner"></div>
     <div class="card" id="haus-summe"></div>
     <h2>Wohnungen</h2>
     <div id="unit-list"></div>
+    <button class="btn secondary" onclick="wohnungHinzufuegen()">+ Wohnung hinzufügen</button>
     <button class="btn" onclick="teilen()">Übersicht teilen</button>
   </section>
 
@@ -295,7 +324,8 @@
     <h2>Angebot bearbeiten</h2>
     <div class="card" id="w-form"></div>
 
-    <button class="btn danger" onclick="wohnungZuruecksetzen()">Auf Anzeigenwerte zurücksetzen</button>
+    <button class="btn secondary" id="w-reset" onclick="wohnungZuruecksetzen()">Auf Anzeigenwerte zurücksetzen</button>
+    <button class="btn danger" onclick="wohnungLoeschen()">Wohnung löschen</button>
   </section>
 
   <!-- MARKT -->
@@ -382,7 +412,16 @@
     <div class="card" id="r-ergebnis"></div>
   </section>
 
-  <p class="version">Version 6</p>
+  <!-- EINSTELLUNGEN -->
+  <section id="view-einstellungen" class="view">
+    <header>
+      <h1>Einstellungen</h1>
+      <p class="subtitle">Alles, was ihr selbst anpassen könnt</p>
+    </header>
+    <div id="e-inhalt"></div>
+  </section>
+
+  <p class="version">Version 7</p>
 
   <nav class="tabbar">
     <button id="tab-haus" class="active" onclick="zeige('haus')">
@@ -396,6 +435,10 @@
     <button id="tab-rechner" onclick="zeige('rechner')">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1 3v4h10V5zm0 7v2h2v-2zm4 0v2h2v-2zm4 0v6h2v-6zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg>
       Rechner
+    </button>
+    <button id="tab-einstellungen" onclick="zeige('einstellungen')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+      Einstellungen
     </button>
   </nav>
 
@@ -416,9 +459,13 @@
     const KEY_WOHNUNGEN = 'mk4-wohnungen';
     const KEY_BASIS = 'mk4-eigene-basis';
     const KEY_RECHNER = 'mk4-rechner';
+    const KEY_FAKTOREN = 'mk4-faktoren';
+    const KEY_INSERATE = 'mk4-eigene-inserate';
 
     let wohnungen = laden(KEY_WOHNUNGEN) || kopie(ANZEIGE);
     let eigeneBasis = laden(KEY_BASIS);
+    let faktoren = laden(KEY_FAKTOREN) || { g: {}, z: {} };
+    let eigeneInserate = laden(KEY_INSERATE) || [];
     let markt = null;
     let aktuelleId = null;
 
@@ -460,14 +507,20 @@
     // ---------- Marktlogik ----------
     function basis() { return eigeneBasis != null ? eigeneBasis : markt.basis; }
 
+    // Faktoren: eigene Werte aus den Einstellungen haben Vorrang vor den Marktdaten
+    function gFaktor(i) { return faktoren.g[i] != null ? faktoren.g[i] : markt.groesse[i].faktor; }
+    function zFaktor(k) { return faktoren.z[k] != null ? faktoren.z[k] : markt.zustand[k].faktor; }
+
     function groessenFaktor(flaeche) {
-      for (const g of markt.groesse) if (flaeche < g.bis) return g;
-      return markt.groesse[markt.groesse.length - 1];
+      let i = markt.groesse.findIndex((g) => flaeche < g.bis);
+      if (i < 0) i = markt.groesse.length - 1;
+      return { text: markt.groesse[i].text, faktor: gFaktor(i) };
     }
 
     function marktwert(w) {
       const g = groessenFaktor(w.flaeche);
-      const z = markt.zustand[w.zustand] || markt.zustand.normal;
+      const zk = markt.zustand[w.zustand] ? w.zustand : 'normal';
+      const z = { text: markt.zustand[zk].text, faktor: zFaktor(zk) };
       const rate = basis() * g.faktor * z.faktor;
       const wert = runde5(rate * w.flaeche + w.aussen);
       return { rate, wert, von: runde5(wert * 0.93), bis: runde5(wert * 1.07), g, z };
@@ -512,6 +565,7 @@
       document.querySelectorAll('nav.tabbar button').forEach((b) => b.classList.toggle('active', b.id === 'tab-' + tab));
       if (name === 'haus') renderHaus();
       if (name === 'markt') renderMarkt();
+      if (name === 'einstellungen') renderEinstellungen();
       window.scrollTo(0, 0);
     }
 
@@ -545,6 +599,8 @@
           </button>`;
       });
       document.getElementById('unit-list').innerHTML = html;
+      document.getElementById('haus-untertitel').textContent =
+        wohnungen.length + (wohnungen.length === 1 ? ' Wohnung' : ' Wohnungen') + ' in Hohenaspe';
 
       const diff = sumAngebot - sumMarkt;
       document.getElementById('haus-summe').innerHTML = `
@@ -578,7 +634,12 @@
       const w = wohnung();
       const zOpt = Object.entries(markt.zustand)
         .map(([k, z]) => `<option value="${k}" ${k === w.zustand ? 'selected' : ''}>${esc(z.text)}</option>`).join('');
+      document.getElementById('w-reset').style.display = ANZEIGE.some((x) => x.id === w.id) ? 'block' : 'none';
       document.getElementById('w-form').innerHTML = `
+        <div class="form-group">
+          <label for="f-name">Bezeichnung</label>
+          <input type="text" id="f-name" value="${esc(w.name)}" oninput="aendereText('name', this.value)">
+        </div>
         ${feld('flaeche', 'Wohnfläche (m²)', fmtM2.format(w.flaeche))}
         <div class="form-group">
           <label for="f-zustand">Zustand</label>
@@ -597,7 +658,33 @@
           <label for="f-frei">Frei seit (leer lassen, wenn vermietet)</label>
           <input type="month" id="f-frei" value="${esc(w.frei || '')}" onchange="aendere('frei', this.value)">
         </div>
-        ${w.notiz ? `<span class="hint">${esc(w.notiz)}</span>` : ''}`;
+        <div class="form-group">
+          <label for="f-notiz">Notiz</label>
+          <textarea id="f-notiz" oninput="aendereText('notiz', this.value)">${esc(w.notiz || '')}</textarea>
+        </div>`;
+    }
+
+    function aendereText(feldName, wert) {
+      const w = wohnung();
+      w[feldName] = wert;
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      if (feldName === 'name') document.getElementById('w-titel').textContent = wert || 'Wohnung';
+    }
+
+    function wohnungHinzufuegen() {
+      const id = Math.max(0, ...wohnungen.map((w) => w.id), ...ANZEIGE.map((w) => w.id)) + 1;
+      wohnungen.push({ id, name: 'Wohnung ' + (wohnungen.length + 1), flaeche: 70, zustand: 'normal', aussen: 0,
+        kalt: 600, zusatz: 0, bk: 150, hk: 100, notiz: '' });
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      oeffne(id);
+    }
+
+    function wohnungLoeschen() {
+      const w = wohnung();
+      if (!confirm(`„${w.name}“ wirklich löschen?`)) return;
+      wohnungen = wohnungen.filter((x) => x.id !== w.id);
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      zeige('haus');
     }
 
     function aendere(feldName, wert) {
@@ -619,7 +706,7 @@
       const mw = a.mw;
       document.getElementById('w-titel').textContent = w.name;
       document.getElementById('w-untertitel').textContent =
-        fmtM2.format(w.flaeche) + ' m² · ' + mw.z.text + (w.notiz ? ' · mit Außenbereich' : '');
+        fmtM2.format(w.flaeche) + ' m² · ' + mw.z.text + (w.aussen ? ' · mit Außenbereich' : '');
 
       // Balken: Marktspanne und eigenes Angebot
       const lo = Math.min(mw.von, a.angebot) * 0.9;
@@ -646,18 +733,23 @@
       renderSzenario();
     }
 
+    function alleInserate() {
+      return eigeneInserate.map((x) => ({ ...x, eigen: true })).concat(markt.inserate || []);
+    }
+
     function inseratZeile(x, eigeneRate) {
       const rate = x.kalt / x.flaeche;
       const diff = eigeneRate != null ? Math.round((eigeneRate / rate - 1) * 100) : null;
       return `<div class="row">
         <span class="l">${esc(x.ort)} · ${fmtM2.format(x.flaeche)} m² · ${esc(x.zimmer)} Zi.
-          <span class="sub">${x.text ? esc(x.text) + ' · ' : ''}<span class="source"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.quelle)}</a></span></span></span>
+          <span class="sub">${x.text ? esc(x.text) + ' · ' : ''}${x.url ? `<span class="source"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.quelle)}</a></span>` : esc(x.quelle)}${x.eigen ? ' · selbst erfasst' : ''}</span>
+          ${x.eigen && eigeneRate == null ? `<button class="del" onclick="inseratLoeschen(${x.id})">Löschen</button>` : ''}</span>
         <span class="v">${euro(x.kalt)}<span class="sub">${proM2(rate)}${diff != null ? ` · ihr ${diff >= 0 ? '+' : ''}${diff} %` : ''}</span></span>
       </div>`;
     }
 
     function renderVergleich(w, a) {
-      const liste = (markt.inserate || [])
+      const liste = alleInserate()
         .filter((x) => Math.abs(x.flaeche - w.flaeche) <= w.flaeche * 0.25)
         .sort((x, y) => (y.ort === 'Hohenaspe') - (x.ort === 'Hohenaspe') || Math.abs(x.flaeche - w.flaeche) - Math.abs(y.flaeche - w.flaeche));
       document.getElementById('w-vergleich').innerHTML = liste.length
@@ -735,8 +827,8 @@
           <span class="l">${esc(v.name)}<span class="sub source"><a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.quelle)}</a></span></span>
           <span class="v">${v.wert != null ? proM2(v.wert) : esc(v.text) + ' €/m²'}</span>
         </div>`).join('');
-      const groesse = markt.groesse.map((g) => `<div class="row"><span class="l">${esc(g.text)}</span><span class="v">× ${fmt2.format(g.faktor)}</span></div>`).join('');
-      const zustand = Object.values(markt.zustand).map((z) => `<div class="row"><span class="l">${esc(z.text)}</span><span class="v">× ${fmt2.format(z.faktor)}</span></div>`).join('');
+      const groesse = markt.groesse.map((g, i) => `<div class="row"><span class="l">${esc(g.text)}</span><span class="v">× ${fmt2.format(gFaktor(i))}</span></div>`).join('');
+      const zustand = Object.entries(markt.zustand).map(([k, z]) => `<div class="row"><span class="l">${esc(z.text)}</span><span class="v">× ${fmt2.format(zFaktor(k))}</span></div>`).join('');
       const hinweise = markt.hinweise.map((h) => `<p class="hint" style="font-size:14px">${esc(h)}</p>`).join('');
 
       document.getElementById('m-inhalt').innerHTML = `
@@ -771,8 +863,31 @@
           <span class="hint">Öffnet die aktuelle Suche auf dem Portal. So seht ihr, was Interessenten gerade sehen.</span>
         </div>
 
-        <h2>Aktuelle Inserate (Stand ${datum(markt.stand)})</h2>
-        <div class="card">${(markt.inserate || []).map((x) => inseratZeile(x, null)).join('')}</div>
+        <h2>Inserat selbst erfassen</h2>
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group"><label for="i-ort">Ort</label><input type="text" id="i-ort" value="Hohenaspe"></div>
+            <div class="form-group"><label for="i-zimmer">Zimmer</label><input type="text" inputmode="decimal" id="i-zimmer" value=""></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label for="i-flaeche">Fläche (m²)</label><input type="text" inputmode="decimal" id="i-flaeche" value=""></div>
+            <div class="form-group"><label for="i-kalt">Kaltmiete (€)</label><input type="text" inputmode="decimal" id="i-kalt" value=""></div>
+          </div>
+          <div class="form-group">
+            <label for="i-quelle">Gefunden auf</label>
+            <select id="i-quelle"><option>Kleinanzeigen</option><option>ImmoScout24</option><option>Immowelt</option><option>Zeitung</option><option>Sonstiges</option></select>
+          </div>
+          <div class="form-group"><label for="i-text">Notiz (optional)</label><input type="text" id="i-text" value="" placeholder="z. B. mit Balkon, renoviert"></div>
+          <div class="form-group"><label for="i-url">Link (optional)</label><input type="text" id="i-url" value="" placeholder="Link zur Anzeige einfügen" autocapitalize="off"></div>
+          <button class="btn" onclick="inseratSpeichern()">Inserat speichern</button>
+          <span class="hint">Seht ihr ein passendes Konkurrenzangebot, tragt es hier ein. Es erscheint dann bei den Wohnungen im Vergleich. Eigene Anzeigen bitte nicht eintragen.</span>
+        </div>
+
+        <h2>Aktuelle Inserate (${alleInserate().length})</h2>
+        <div class="card">
+          ${hohenaspeSchnitt()}
+          ${alleInserate().map((x) => inseratZeile(x, null)).join('')}
+        </div>
 
         <h2>Vergleichswerte (Angebotsmieten kalt)</h2>
         <div class="card">${vergleich}</div>
@@ -786,7 +901,7 @@
           <span class="hint source"><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.quelle)}</a></span>
         </div>
 
-        <h2>Faktoren der Marktschätzung</h2>
+        <h2>Faktoren der Marktschätzung (änderbar unter Einstellungen)</h2>
         <div class="card">${groesse}</div>
         <div class="card">${zustand}</div>
 
@@ -794,8 +909,38 @@
         <div class="card">${hinweise}</div>
 
         <div class="banner blue">
-          <b>Marktdaten aktualisieren:</b> Die App lädt beim Start automatisch die neuesten Marktdaten, sobald sie aktualisiert wurden. Die Recherche selbst macht Claude: einfach im Chat „Marktdaten aktualisieren“ schreiben.
+          <b>Marktdaten aktualisieren:</b> Selbst gefundene Inserate könnt ihr oben jederzeit eintragen. Eine komplette Neurecherche macht Claude: im Chat „Marktdaten aktualisieren“ schreiben. Die App lädt die neuen Daten danach automatisch.
         </div>`;
+    }
+
+    function hohenaspeSchnitt() {
+      const raten = alleInserate().filter((x) => x.ort.trim().toLowerCase() === 'hohenaspe').map((x) => x.kalt / x.flaeche);
+      if (!raten.length) return '';
+      const mittel = raten.reduce((a, b) => a + b, 0) / raten.length;
+      return `<div class="row total"><span class="l">Mittelwert Hohenaspe<span class="sub">${raten.length} Inserate</span></span><span class="v">${proM2(mittel)}</span></div>
+        <button class="btn secondary" onclick="eigeneBasis = ${mittel.toFixed(2)}; speichern(KEY_BASIS, eigeneBasis); renderMarkt()">Als eigenen Basiswert übernehmen</button>
+        <span class="hint">Achtung: Inserate sind oft renovierte Wohnungen. Der Basiswert gilt für normalen Zustand und wird pro Wohnung noch mit dem Zustand verrechnet.</span>`;
+    }
+
+    function inseratSpeichern() {
+      const v = (id) => document.getElementById(id).value.trim();
+      const flaeche = zahl(v('i-flaeche')), kalt = zahl(v('i-kalt'));
+      if (flaeche < 10 || kalt < 50) { alert('Bitte Fläche und Kaltmiete eintragen.'); return; }
+      const url = v('i-url');
+      eigeneInserate.unshift({
+        id: Date.now(), ort: v('i-ort') || 'Hohenaspe', flaeche, kalt, zimmer: v('i-zimmer') || '?',
+        text: (v('i-text') ? v('i-text') + ' · ' : '') + 'erfasst am ' + new Date().toLocaleDateString('de-DE'),
+        quelle: v('i-quelle'), url: /^https?:\/\//.test(url) ? url : ''
+      });
+      speichern(KEY_INSERATE, eigeneInserate);
+      renderMarkt();
+    }
+
+    function inseratLoeschen(id) {
+      if (!confirm('Dieses Inserat löschen?')) return;
+      eigeneInserate = eigeneInserate.filter((x) => x.id !== id);
+      speichern(KEY_INSERATE, eigeneInserate);
+      renderMarkt();
     }
 
     function eigeneBasisSchalten(an) {
@@ -812,6 +957,130 @@
     function eigeneBasisSetzen(wert) {
       const n = dezimal(wert);
       if (n > 0) { eigeneBasis = n; speichern(KEY_BASIS, eigeneBasis); }
+    }
+
+    // ---------- Ansicht: Einstellungen ----------
+    function renderEinstellungen() {
+      if (!markt) return;
+      const gZeilen = markt.groesse.map((g, i) => `<div class="faktor-row"><span>${esc(g.text)}</span>
+        <input type="text" inputmode="decimal" value="${fmt2.format(gFaktor(i))}" oninput="faktorSetzen('g', ${i}, this.value)"></div>`).join('');
+      const zZeilen = Object.entries(markt.zustand).map(([k, z]) => `<div class="faktor-row"><span>${esc(z.text)}</span>
+        <input type="text" inputmode="decimal" value="${fmt2.format(zFaktor(k))}" oninput="faktorSetzen('z', '${k}', this.value)"></div>`).join('');
+
+      document.getElementById('e-inhalt').innerHTML = `
+        <h2>So funktioniert die App</h2>
+        <div class="card">
+          <ol class="steps">
+            <li><b>Haus:</b> Alle Wohnungen auf einen Blick. Antippen öffnet die Details.</li>
+            <li><b>Wohnung:</b> Unten unter „Angebot bearbeiten“ Bezeichnung, Fläche, Zustand, Miete, Neben- und Heizkosten, Leerstand und Notiz ändern. Alles wird sofort gespeichert.</li>
+            <li><b>Was wäre, wenn:</b> Mit dem Regler eine neue Miete testen und mit „Als neues Angebot übernehmen“ speichern.</li>
+            <li><b>Markt:</b> Konkurrenzangebote ansehen, selbst gefundene Inserate eintragen und bei Bedarf einen eigenen Basiswert festlegen.</li>
+            <li><b>Einstellungen:</b> Faktoren anpassen und Daten an den Partner senden.</li>
+          </ol>
+        </div>
+
+        <h2>Faktor Wohnungsgröße</h2>
+        <div class="card">${gZeilen}
+          <span class="hint">Kleine Wohnungen erzielen meist einen höheren m²-Preis. 1,00 = Basiswert, 1,05 = 5 % mehr.</span>
+        </div>
+
+        <h2>Faktor Zustand</h2>
+        <div class="card">${zZeilen}
+          <span class="hint">Zuschlag oder Abschlag je nach Zustand der Wohnung.</span>
+        </div>
+        <button class="btn secondary" onclick="faktorenZuruecksetzen()">Faktoren auf Standard zurücksetzen</button>
+
+        <h2>Daten mit dem Partner teilen</h2>
+        <div class="card">
+          <p class="hint" style="font-size:14px;margin-top:0">Jedes iPhone speichert seine eigenen Eingaben. So überträgst du deinen Stand auf das andere iPhone:</p>
+          <ol class="steps">
+            <li>Hier auf „Daten senden“ tippen und per WhatsApp oder iMessage schicken.</li>
+            <li>Auf dem anderen iPhone die Nachricht lange drücken und „Kopieren“ wählen.</li>
+            <li>Dort in der App unter Einstellungen in das Feld unten einfügen und „Daten übernehmen“ tippen.</li>
+          </ol>
+          <button class="btn" onclick="datenSenden()">Daten senden</button>
+          <div class="form-group">
+            <label for="e-import">Empfangene Daten einfügen</label>
+            <textarea id="e-import" placeholder="Mietkalkulator-Daten hier einfügen" autocapitalize="off" autocorrect="off"></textarea>
+          </div>
+          <button class="btn secondary" onclick="datenUebernehmen()">Daten übernehmen</button>
+        </div>
+
+        <h2>Zurücksetzen</h2>
+        <button class="btn danger" onclick="allesZuruecksetzen()">Alle Eingaben löschen</button>
+        <span class="hint">Stellt die vier Wohnungen wie annonciert wieder her und löscht eigene Inserate, Faktoren und Basiswert.</span>`;
+    }
+
+    function faktorSetzen(art, schluessel, wert) {
+      const n = dezimal(wert);
+      if (n < 0.5 || n > 2) return;
+      faktoren[art][schluessel] = n;
+      speichern(KEY_FAKTOREN, faktoren);
+    }
+
+    function faktorenZuruecksetzen() {
+      faktoren = { g: {}, z: {} };
+      speichern(KEY_FAKTOREN, faktoren);
+      renderEinstellungen();
+    }
+
+    // Datenaustausch: alle Eingaben als Textcode, Unicode-sicher kodiert
+    const DATEN_PREFIX = 'MIETKALKULATOR-DATEN:';
+    function zuBase64(text) {
+      const bytes = new TextEncoder().encode(text);
+      let bin = '';
+      bytes.forEach((b) => (bin += String.fromCharCode(b)));
+      return btoa(bin);
+    }
+    function vonBase64(b64) {
+      return new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+    }
+
+    function datenSenden() {
+      const paket = { v: 1, datum: new Date().toISOString(), wohnungen, eigeneBasis, faktoren, eigeneInserate };
+      const text = DATEN_PREFIX + zuBase64(JSON.stringify(paket));
+      if (navigator.share) {
+        navigator.share({ title: 'Mietkalkulator-Daten', text }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => alert('Daten in die Zwischenablage kopiert.'));
+      }
+    }
+
+    function datenUebernehmen() {
+      const roh = document.getElementById('e-import').value.trim();
+      const start = roh.indexOf(DATEN_PREFIX);
+      try {
+        if (start < 0) throw new Error('kein Code');
+        const code = roh.slice(start + DATEN_PREFIX.length).split(/\s/)[0];
+        const paket = JSON.parse(vonBase64(code));
+        if (!Array.isArray(paket.wohnungen)) throw new Error('ungültig');
+        const vom = new Date(paket.datum).toLocaleString('de-DE');
+        if (!confirm(`Daten vom ${vom} übernehmen? Die Eingaben auf diesem iPhone werden ersetzt.`)) return;
+        wohnungen = paket.wohnungen;
+        eigeneBasis = paket.eigeneBasis != null ? paket.eigeneBasis : null;
+        faktoren = paket.faktoren || { g: {}, z: {} };
+        eigeneInserate = paket.eigeneInserate || [];
+        speichern(KEY_WOHNUNGEN, wohnungen);
+        speichern(KEY_BASIS, eigeneBasis);
+        speichern(KEY_FAKTOREN, faktoren);
+        speichern(KEY_INSERATE, eigeneInserate);
+        alert('Daten übernommen.');
+        zeige('haus');
+      } catch (e) {
+        alert('Die eingefügten Daten konnten nicht gelesen werden. Bitte die komplette Nachricht kopieren und erneut einfügen.');
+      }
+    }
+
+    function allesZuruecksetzen() {
+      if (!confirm('Wirklich alle Eingaben auf diesem iPhone löschen?')) return;
+      wohnungen = kopie(ANZEIGE);
+      eigeneBasis = null;
+      faktoren = { g: {}, z: {} };
+      eigeneInserate = [];
+      [KEY_WOHNUNGEN, KEY_BASIS, KEY_FAKTOREN, KEY_INSERATE].forEach((k) => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+      zeige('haus');
     }
 
     // ---------- Teilen ----------
@@ -894,6 +1163,7 @@
       markt = gueltig[0];
       renderHaus();
       if (document.getElementById('view-markt').classList.contains('active')) renderMarkt();
+      if (document.getElementById('view-einstellungen').classList.contains('active')) renderEinstellungen();
     }
 
     // ---------- Start ----------
