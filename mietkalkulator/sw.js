@@ -1,5 +1,5 @@
 // Offline-Cache: bei Aenderungen an den Dateien die Versionsnummer erhoehen
-const CACHE = 'mietkalkulator-v7';
+const CACHE = 'mietkalkulator-v8';
 const ASSETS = [
   './',
   './index.html',
