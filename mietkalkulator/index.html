@@ -7,11 +7,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Mietkalkulator">
-  <meta name="theme-color" content="#F2F2F7">
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-  <title>Mietkalkulator Region Hohenaspe</title>
+  <title>Mietkalkulator Hohenaspe</title>
   <style>
     :root {
       --bg: #F2F2F7;
@@ -20,7 +21,35 @@
       --text-sub: #6C6C70;
       --accent: #007AFF;
       --divider: #E5E5EA;
+      --field-bg: #FFFFFF;
+      --green: #248A3D;
+      --green-bg: #E3F6E8;
+      --orange: #B25000;
+      --orange-bg: #FFF0DC;
+      --red: #D70015;
+      --red-bg: #FFE5E7;
+      --blue-bg: #E1EEFF;
+      --tabbar-bg: rgba(249,249,249,0.94);
       --card-radius: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --card-bg: #1C1C1E;
+        --text-main: #FFFFFF;
+        --text-sub: #98989F;
+        --accent: #0A84FF;
+        --divider: #38383A;
+        --field-bg: #2C2C2E;
+        --green: #30D158;
+        --green-bg: #0F3A1C;
+        --orange: #FF9F0A;
+        --orange-bg: #3D2800;
+        --red: #FF453A;
+        --red-bg: #3F1214;
+        --blue-bg: #0B2A4D;
+        --tabbar-bg: rgba(22,22,24,0.94);
+      }
     }
     * {
       box-sizing: border-box;
@@ -31,35 +60,41 @@
       background-color: var(--bg);
       color: var(--text-main);
       margin: 0;
-      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
+      padding: env(safe-area-inset-top, 20px) 16px calc(84px + env(safe-area-inset-bottom, 0px)) 16px;
     }
     header {
       padding: 16px 4px 8px 4px;
     }
     h1 {
-      font-size: 26px;
+      font-size: 30px;
       font-weight: 700;
       margin: 0 0 4px 0;
       letter-spacing: -0.5px;
+    }
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      margin: 22px 4px 8px 4px;
     }
     .subtitle {
       font-size: 14px;
       color: var(--text-sub);
       margin: 0;
     }
+    .view { display: none; }
+    .view.active { display: block; }
     .card {
       background: var(--card-bg);
       border-radius: var(--card-radius);
       padding: 14px 16px;
       margin-bottom: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    .form-group {
-      margin-bottom: 14px;
-    }
-    .form-group:last-child {
-      margin-bottom: 0;
-    }
+    .form-group { margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; min-width: 0; }
     label {
       display: block;
       font-size: 13px;
@@ -69,19 +104,27 @@
       letter-spacing: -0.2px;
       margin-bottom: 6px;
     }
-    input[type="number"], input[type="text"], select {
+    input[type="text"], select {
       width: 100%;
       height: 44px;
       padding: 8px 12px;
       font-size: 17px;
+      color: var(--text-main);
       border: 1px solid var(--divider);
       border-radius: 10px;
-      background: #FFFFFF;
+      background: var(--field-bg);
       outline: none;
       -webkit-appearance: none;
     }
-    input[type="number"]:focus, input[type="text"]:focus, select:focus {
-      border-color: var(--accent);
+    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+    select:disabled { opacity: 0.4; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); height: 32px; }
+    .hint {
+      display: block;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 6px;
+      line-height: 1.4;
     }
     .toggle-row {
       display: flex;
@@ -89,327 +132,723 @@
       align-items: center;
       padding: 4px 0;
     }
-    .toggle-label {
-      font-size: 17px;
-      color: var(--text-main);
-      font-weight: 400;
-    }
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 51px;
-      height: 31px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    .toggle-label { font-size: 17px; }
+    .switch { position: relative; display: inline-block; width: 51px; height: 31px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #E9E9EB;
-      transition: .2s;
-      border-radius: 31px;
+      position: absolute; cursor: pointer; inset: 0;
+      background-color: #E9E9EB; transition: .2s; border-radius: 31px;
     }
+    @media (prefers-color-scheme: dark) { .slider { background-color: #39393D; } }
     .slider:before {
-      position: absolute;
-      content: "";
-      height: 27px;
-      width: 27px;
-      left: 2px;
-      bottom: 2px;
-      background-color: white;
-      transition: .2s;
-      border-radius: 50%;
+      position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px;
+      background-color: white; transition: .2s; border-radius: 50%;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    input:checked + .slider {
-      background-color: #34C759;
-    }
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-    #terrace-details, #custom-details {
+    input:checked + .slider { background-color: #34C759; }
+    input:checked + .slider:before { transform: translateX(20px); }
+    .collapsible {
       display: none;
       margin-top: 12px;
       padding-top: 12px;
       border-top: 1px solid var(--divider);
     }
-    .result-box {
-      background: #FFFFFF;
-      border-radius: var(--card-radius);
-      padding: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .result-item {
+    .row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      padding: 8px 0;
+      gap: 12px;
+      padding: 9px 0;
       border-bottom: 1px solid var(--divider);
     }
-    .result-item:last-child {
-      border-bottom: none;
-      padding-top: 12px;
+    .row:last-child { border-bottom: none; }
+    .row .l { font-size: 15px; color: var(--text-sub); }
+    .row .v { font-size: 16px; font-weight: 600; text-align: right; white-space: nowrap; }
+    .row .sub { display: block; font-size: 12px; color: var(--text-sub); font-weight: 400; margin-top: 2px; }
+    .total .l { color: var(--text-main); font-weight: 700; }
+    .total .v { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .unit {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      color: var(--text-main);
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
     }
-    .result-label {
-      font-size: 15px;
-      color: var(--text-sub);
+    .unit-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .unit-name { font-size: 17px; font-weight: 600; }
+    .unit-meta { font-size: 14px; color: var(--text-sub); margin-top: 4px; }
+    .unit-nums { display: flex; justify-content: space-between; margin-top: 10px; font-size: 15px; }
+    .unit-nums b { font-size: 17px; }
+    .chev { color: var(--text-sub); font-size: 20px; }
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
     }
-    .result-val {
+    .pill.green { color: var(--green); background: var(--green-bg); }
+    .pill.orange { color: var(--orange); background: var(--orange-bg); }
+    .pill.red { color: var(--red); background: var(--red-bg); }
+    .pill.blue { color: var(--accent); background: var(--blue-bg); }
+    .banner {
+      border-radius: var(--card-radius);
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .banner.orange { background: var(--orange-bg); color: var(--text-main); }
+    .banner.blue { background: var(--blue-bg); color: var(--text-main); }
+    .btn {
+      display: block;
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: 12px;
       font-size: 17px;
       font-weight: 600;
-      color: var(--text-main);
+      background: var(--accent);
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      cursor: pointer;
     }
-    .result-total {
-      font-size: 20px;
-      font-weight: 700;
+    .btn.secondary { background: var(--card-bg); color: var(--accent); }
+    .btn.danger { background: var(--card-bg); color: var(--red); }
+    .back {
+      border: none;
+      background: none;
       color: var(--accent);
+      font-size: 17px;
+      padding: 8px 0;
+      cursor: pointer;
     }
-    .hint {
-      display: block;
-      font-size: 12px;
+    .bar { position: relative; height: 28px; margin: 6px 0 2px 0; }
+    .bar-track { position: absolute; left: 0; right: 0; top: 11px; height: 6px; border-radius: 3px; background: var(--divider); }
+    .bar-range { position: absolute; top: 11px; height: 6px; border-radius: 3px; background: var(--green); opacity: 0.55; }
+    .bar-mark { position: absolute; top: 4px; width: 4px; height: 20px; border-radius: 2px; margin-left: -2px; }
+    .bar-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); }
+    .source a { color: var(--accent); text-decoration: none; }
+    .version { text-align: center; font-size: 12px; color: var(--text-sub); margin: 16px 0 8px 0; }
+    nav.tabbar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      display: flex;
+      background: var(--tabbar-bg);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border-top: 0.5px solid var(--divider);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 10;
+    }
+    nav.tabbar button {
+      flex: 1;
+      border: none;
+      background: none;
+      padding: 8px 0 6px 0;
+      font-size: 11px;
       color: var(--text-sub);
-      margin-top: 6px;
+      cursor: pointer;
     }
-    select:disabled {
-      opacity: 0.4;
-    }
-    .version {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-sub);
-      margin: 16px 0 8px 0;
-    }
-    .badge {
-      font-size: 12px;
-      color: var(--text-sub);
-      text-align: right;
-      display: block;
-      margin-top: 2px;
-    }
+    nav.tabbar button svg { display: block; margin: 0 auto 3px auto; width: 26px; height: 26px; }
+    nav.tabbar button.active { color: var(--accent); }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Mietkalkulator</h1>
-    <p class="subtitle">Hohenaspe und Region Itzehoe</p>
-  </header>
+  <!-- HAUS -->
+  <section id="view-haus" class="view active">
+    <header>
+      <h1>Unser Haus</h1>
+      <p class="subtitle">4 Wohnungen in Hohenaspe</p>
+    </header>
+    <div id="markt-banner"></div>
+    <div class="card" id="haus-summe"></div>
+    <h2>Wohnungen</h2>
+    <div id="unit-list"></div>
+    <button class="btn" onclick="teilen()">Übersicht teilen</button>
+  </section>
 
-  <!-- Basisdaten -->
-  <div class="card">
-    <div class="form-group">
-      <label for="living-area">Wohnfläche Innen (m²)</label>
-      <input type="number" inputmode="decimal" id="living-area" value="77" min="1" step="0.5" oninput="calculate()">
-    </div>
+  <!-- WOHNUNG (Detail) -->
+  <section id="view-wohnung" class="view">
+    <button class="back" onclick="zeige('haus')">‹ Haus</button>
+    <header style="padding-top:4px">
+      <h1 id="w-titel">Wohnung</h1>
+      <p class="subtitle" id="w-untertitel"></p>
+    </header>
 
-    <div class="form-group">
-      <label for="location">Ortschaft / Lage</label>
-      <select id="location" onchange="calculate()">
-        <option value="0.00" selected>Hohenaspe</option>
-        <option value="0.00">Looft / Kaaks / Ottenbüttel</option>
-        <option value="0.10">Hohenlockstedt (+0,10 €/m²)</option>
-        <option value="0.30">Itzehoe Stadt (+0,30 €/m²)</option>
-      </select>
-    </div>
+    <h2>Marktvergleich</h2>
+    <div class="card" id="w-markt"></div>
 
-    <div class="form-group">
-      <label for="renovation">Renovierungsgrad</label>
-      <select id="renovation" onchange="calculate()">
-        <option value="8.00">Älterer Bestand (gepflegt) [8,00 €/m²]</option>
-        <option value="8.70" selected>Teilrenoviert [8,70 €/m²]</option>
-        <option value="9.30">Vollständig renoviert [9,30 €/m²]</option>
-        <option value="10.40">Erstbezug / Kernsaniert [10,40 €/m²]</option>
-      </select>
-    </div>
+    <h2>Was wäre, wenn …</h2>
+    <div class="card" id="w-szenario"></div>
 
-  </div>
+    <h2>Angebot bearbeiten</h2>
+    <div class="card" id="w-form"></div>
 
-  <!-- Eigener Preis -->
-  <div class="card">
-    <div class="toggle-row">
-      <span class="toggle-label">Eigenen m²-Preis verwenden</span>
-      <label class="switch">
-        <input type="checkbox" id="custom-toggle" onchange="toggleCustom()">
-        <span class="slider"></span>
-      </label>
-    </div>
+    <button class="btn danger" onclick="wohnungZuruecksetzen()">Auf Anzeigenwerte zurücksetzen</button>
+  </section>
 
-    <div id="custom-details">
+  <!-- MARKT -->
+  <section id="view-markt" class="view">
+    <header>
+      <h1>Marktlage</h1>
+      <p class="subtitle" id="m-stand"></p>
+    </header>
+    <div id="m-inhalt"></div>
+  </section>
+
+  <!-- RECHNER -->
+  <section id="view-rechner" class="view">
+    <header>
+      <h1>Schnellrechner</h1>
+      <p class="subtitle">Beliebige Wohnung in der Region durchrechnen</p>
+    </header>
+
+    <div class="card">
       <div class="form-group">
-        <label for="custom-rate">Eigener Quadratmeterpreis kalt (€/m²)</label>
-        <input type="text" inputmode="decimal" id="custom-rate" value="9,00" autocomplete="off" oninput="calculate()">
-        <span class="hint">Ersetzt Renovierungsgrad und Lagezuschlag. Komma oder Punkt möglich.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Terrasse -->
-  <div class="card">
-    <div class="toggle-row">
-      <span class="toggle-label">Terrasse vorhanden</span>
-      <label class="switch">
-        <input type="checkbox" id="terrace-toggle" onchange="toggleTerrace()">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div id="terrace-details">
-      <div class="form-group">
-        <label for="terrace-area">Terrassenfläche (m²)</label>
-        <input type="number" inputmode="decimal" id="terrace-area" value="16" min="0" step="0.5" oninput="calculate()">
+        <label for="r-flaeche">Wohnfläche Innen (m²)</label>
+        <input type="text" inputmode="decimal" id="r-flaeche" value="77" oninput="rechne()">
       </div>
       <div class="form-group">
-        <label for="terrace-factor">Anrechnung nach WoFlV</label>
-        <select id="terrace-factor" onchange="calculate()">
-          <option value="0.25" selected>25 % (Standard Wohnwert)</option>
-          <option value="0.50">50 % (Besonders hoher Wohnwert)</option>
+        <label for="r-lage">Ortschaft / Lage</label>
+        <select id="r-lage" onchange="rechne()">
+          <option value="0.00">Hohenaspe</option>
+          <option value="0.00">Looft / Kaaks / Ottenbüttel</option>
+          <option value="0.10">Hohenlockstedt (+0,10 €/m²)</option>
+          <option value="0.30">Itzehoe Stadt (+0,30 €/m²)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="r-zustand">Renovierungsgrad</label>
+        <select id="r-zustand" onchange="rechne()">
+          <option value="8.00">Älterer Bestand (gepflegt) [8,00 €/m²]</option>
+          <option value="8.70" selected>Teilrenoviert [8,70 €/m²]</option>
+          <option value="9.30">Vollständig renoviert [9,30 €/m²]</option>
+          <option value="10.40">Erstbezug / Kernsaniert [10,40 €/m²]</option>
         </select>
       </div>
     </div>
-  </div>
 
-  <!-- Berechnungsergebnis -->
-  <div class="result-box">
-    <div class="result-item">
-      <span class="result-label">Anrechenbare Fläche</span>
-      <span class="result-val" id="res-area">77,00 m²</span>
-    </div>
-    <div class="result-item">
-      <span class="result-label">Quadratmeterpreis kalt</span>
-      <span class="result-val" id="res-rate">8,70 €/m²</span>
-    </div>
-    <div class="result-item">
-      <div>
-        <span class="result-label">Kaltmiete</span>
-        <span class="badge" id="res-cold-exact">exakt: 669,90 €</span>
+    <div class="card">
+      <div class="toggle-row">
+        <span class="toggle-label">Eigenen m²-Preis verwenden</span>
+        <label class="switch">
+          <input type="checkbox" id="r-eigen-an" onchange="rechne(); if (this.checked) document.getElementById('r-eigen').focus();">
+          <span class="slider"></span>
+        </label>
       </div>
-      <span class="result-val" id="res-cold">670,00 €</span>
-    </div>
-    <div class="result-item">
-      <div>
-        <span class="result-label">Nebenkosten (ca. 3 €/m²)</span>
-        <span class="badge" id="res-nk-exact">exakt: 231,00 €</span>
+      <div class="collapsible" id="r-eigen-box">
+        <div class="form-group">
+          <label for="r-eigen">Eigener Quadratmeterpreis kalt (€/m²)</label>
+          <input type="text" inputmode="decimal" id="r-eigen" value="9,00" oninput="rechne()">
+          <span class="hint">Ersetzt Renovierungsgrad und Lagezuschlag.</span>
+        </div>
       </div>
-      <span class="result-val" id="res-nk">230,00 €</span>
     </div>
-    <div class="result-item">
-      <span class="result-label" style="font-weight:700; color: #000;">Warmmiete Gesamt</span>
-      <span class="result-total" id="res-warm">900,00 €</span>
-    </div>
-  </div>
 
-  <p class="version">Version 3</p>
+    <div class="card">
+      <div class="toggle-row">
+        <span class="toggle-label">Terrasse vorhanden</span>
+        <label class="switch">
+          <input type="checkbox" id="r-terrasse-an" onchange="rechne()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="collapsible" id="r-terrasse-box">
+        <div class="form-group">
+          <label for="r-terrasse">Terrassenfläche (m²)</label>
+          <input type="text" inputmode="decimal" id="r-terrasse" value="16" oninput="rechne()">
+        </div>
+        <div class="form-group">
+          <label for="r-faktor">Anrechnung nach WoFlV</label>
+          <select id="r-faktor" onchange="rechne()">
+            <option value="0.25" selected>25 % (Standard Wohnwert)</option>
+            <option value="0.50">50 % (Besonders hoher Wohnwert)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="r-ergebnis"></div>
+  </section>
+
+  <p class="version">Version 4</p>
+
+  <nav class="tabbar">
+    <button id="tab-haus" class="active" onclick="zeige('haus')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2.5 11h2.5v9h5.5v-6h3v6H19v-9h2.5z"/></svg>
+      Haus
+    </button>
+    <button id="tab-markt" onclick="zeige('markt')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4zM5 11h3v7H5zm5.5-5h3v12h-3zM16 14h3v4h-3z"/></svg>
+      Markt
+    </button>
+    <button id="tab-rechner" onclick="zeige('rechner')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm1 3v4h10V5zm0 7v2h2v-2zm4 0v2h2v-2zm4 0v6h2v-6zm-8 4v2h2v-2zm4 0v2h2v-2z"/></svg>
+      Rechner
+    </button>
+  </nav>
 
   <script>
-    // Zuletzt verwendete Eingaben merken
-    const STORAGE_KEY = 'mietkalkulator-eingaben';
-    const FIELDS = ['living-area', 'location', 'renovation', 'custom-rate', 'terrace-area', 'terrace-factor'];
+    // ---------- Stammdaten: Wohnungen wie annonciert ----------
+    const ANZEIGE = [
+      { id: 1, name: 'Wohnung 1', flaeche: 111, zustand: 'gut', aussen: 0, kalt: 1200, zusatz: 0, bk: 300, hk: 200,
+        notiz: '' },
+      { id: 2, name: 'Wohnung 2', flaeche: 77, zustand: 'gut', aussen: 0, kalt: 900, zusatz: 0, bk: 120, hk: 150,
+        notiz: '' },
+      { id: 3, name: 'Wohnung 3', flaeche: 67, zustand: 'gut', aussen: 50, kalt: 800, zusatz: 0, bk: 150, hk: 100,
+        notiz: 'Hinterhof ca. 45 m², davon etwa die Hälfte Terrasse, Rest frei gestaltbar' },
+      { id: 4, name: 'Wohnung 4', flaeche: 56, zustand: 'gut', aussen: 40, kalt: 800, zusatz: 100, bk: 200, hk: 100,
+        notiz: 'Hofnutzung und angebauter Schuppen inkl. Terrasse ca. 14 m² (Zusatz 100 €)' }
+    ];
 
-    function saveInputs() {
-      try {
-        const data = {
-          terrace: document.getElementById('terrace-toggle').checked,
-          custom: document.getElementById('custom-toggle').checked
-        };
-        FIELDS.forEach((id) => {
-          const el = document.getElementById(id);
-          data[id] = el.tagName === 'SELECT' ? el.selectedIndex : el.value;
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e) {}
+    const RAW_URL = 'https://raw.githubusercontent.com/LarsSchniete/Temperaturrechner/main/mietkalkulator/marktdaten.json';
+    const KEY_WOHNUNGEN = 'mk4-wohnungen';
+    const KEY_BASIS = 'mk4-eigene-basis';
+    const KEY_RECHNER = 'mk4-rechner';
+
+    let wohnungen = laden(KEY_WOHNUNGEN) || kopie(ANZEIGE);
+    let eigeneBasis = laden(KEY_BASIS);
+    let markt = null;
+    let aktuelleId = null;
+
+    // ---------- Hilfsfunktionen ----------
+    function kopie(o) { return JSON.parse(JSON.stringify(o)); }
+    function laden(key) {
+      try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+    }
+    function speichern(key, wert) {
+      try { localStorage.setItem(key, JSON.stringify(wert)); } catch (e) {}
+    }
+    function zahl(v) {
+      const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+      return isNaN(n) ? 0 : n;
+    }
+    // Dezimalfelder: Punkt als Dezimaltrenner zulassen, wenn kein Komma da ist
+    function dezimal(v) {
+      const s = String(v).trim();
+      const n = s.includes(',') ? parseFloat(s.replace(/\./g, '').replace(',', '.')) : parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+    const fmtEuro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    const fmt2 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const fmtM2 = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
+    function euro(n) { return fmtEuro.format(n); }
+    function proM2(n) { return fmt2.format(n) + ' €/m²'; }
+    function runde5(n) { return Math.round(n / 5) * 5; }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function datum(iso) {
+      const [y, m, d] = iso.split('-');
+      return d + '.' + m + '.' + y;
+    }
+    function tageSeit(iso) {
+      return Math.floor((Date.now() - new Date(iso + 'T00:00:00').getTime()) / 86400000);
     }
 
-    function loadInputs() {
-      try {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!data) return;
-        FIELDS.forEach((id) => {
-          if (data[id] === undefined) return;
-          const el = document.getElementById(id);
-          if (el.tagName !== 'SELECT') el.value = data[id];
-          else if (data[id] >= 0 && data[id] < el.options.length) el.selectedIndex = data[id];
-        });
-        document.getElementById('terrace-toggle').checked = !!data.terrace;
-        document.getElementById('terrace-details').style.display = data.terrace ? 'block' : 'none';
-        document.getElementById('custom-toggle').checked = !!data.custom;
-      } catch (e) {}
+    // ---------- Marktlogik ----------
+    function basis() { return eigeneBasis != null ? eigeneBasis : markt.basis; }
+
+    function groessenFaktor(flaeche) {
+      for (const g of markt.groesse) if (flaeche < g.bis) return g;
+      return markt.groesse[markt.groesse.length - 1];
     }
 
-    function toggleTerrace() {
-      const checked = document.getElementById('terrace-toggle').checked;
-      document.getElementById('terrace-details').style.display = checked ? 'block' : 'none';
-      calculate();
+    function marktwert(w) {
+      const g = groessenFaktor(w.flaeche);
+      const z = markt.zustand[w.zustand] || markt.zustand.normal;
+      const rate = basis() * g.faktor * z.faktor;
+      const wert = runde5(rate * w.flaeche + w.aussen);
+      return { rate, wert, von: runde5(wert * 0.93), bis: runde5(wert * 1.07), g, z };
     }
 
-    function toggleCustom() {
-      calculate();
-      if (document.getElementById('custom-toggle').checked) {
-        document.getElementById('custom-rate').focus();
+    function bewertung(abw) {
+      if (abw > 0.15) return { cls: 'red', text: '+' + Math.round(abw * 100) + ' % über Markt' };
+      if (abw > 0.05) return { cls: 'orange', text: '+' + Math.round(abw * 100) + ' % über Markt' };
+      if (abw < -0.10) return { cls: 'blue', text: Math.round(abw * 100) + ' % unter Markt' };
+      return { cls: 'green', text: 'marktgerecht' };
+    }
+
+    function analyse(w, kalt) {
+      const k = kalt != null ? kalt : w.kalt;
+      const mw = marktwert(w);
+      const angebot = k + w.zusatz;
+      const abw = angebot / mw.wert - 1;
+      return {
+        mw, angebot, abw,
+        warm: angebot + w.bk + w.hk,
+        rate: angebot / w.flaeche,
+        nkRate: (w.bk + w.hk) / w.flaeche,
+        b: bewertung(abw)
+      };
+    }
+
+    // ---------- Navigation ----------
+    function zeige(name) {
+      document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+      document.getElementById('view-' + name).classList.add('active');
+      const tab = name === 'wohnung' ? 'haus' : name;
+      document.querySelectorAll('nav.tabbar button').forEach((b) => b.classList.toggle('active', b.id === 'tab-' + tab));
+      if (name === 'haus') renderHaus();
+      if (name === 'markt') renderMarkt();
+      window.scrollTo(0, 0);
+    }
+
+    // ---------- Ansicht: Haus ----------
+    function renderHaus() {
+      if (!markt) return;
+      const alter = tageSeit(markt.stand);
+      document.getElementById('markt-banner').innerHTML = alter > 90
+        ? `<div class="banner orange">Die Marktdaten sind ${alter} Tage alt (Stand ${datum(markt.stand)}). Bitte aktualisieren lassen, siehe Reiter „Markt“.</div>`
+        : '';
+
+      let sumAngebot = 0, sumMarkt = 0, sumWarm = 0;
+      let html = '';
+      wohnungen.forEach((w) => {
+        const a = analyse(w);
+        sumAngebot += a.angebot; sumMarkt += a.mw.wert; sumWarm += a.warm;
+        html += `
+          <button class="unit" onclick="oeffne(${w.id})">
+            <div class="unit-head">
+              <span class="unit-name">${esc(w.name)}</span>
+              <span><span class="pill ${a.b.cls}">${a.b.text}</span> <span class="chev">›</span></span>
+            </div>
+            <div class="unit-meta">${fmtM2.format(w.flaeche)} m² · ${esc(a.mw.z.text)}</div>
+            <div class="unit-nums">
+              <span>Angebot kalt<br><b>${euro(a.angebot)}</b></span>
+              <span>Markt kalt<br><b>${euro(a.mw.wert)}</b></span>
+              <span style="text-align:right">Warm<br><b>${euro(a.warm)}</b></span>
+            </div>
+          </button>`;
+      });
+      document.getElementById('unit-list').innerHTML = html;
+
+      const diff = sumAngebot - sumMarkt;
+      document.getElementById('haus-summe').innerHTML = `
+        <div class="row"><span class="l">Kaltmiete aktuelles Angebot</span><span class="v">${euro(sumAngebot)}</span></div>
+        <div class="row"><span class="l">Kaltmiete Marktschätzung</span><span class="v">${euro(sumMarkt)}</span></div>
+        <div class="row"><span class="l">Differenz pro Monat</span><span class="v">${diff >= 0 ? '+' : ''}${euro(diff)}</span></div>
+        <div class="row"><span class="l">Differenz pro Jahr</span><span class="v">${diff >= 0 ? '+' : ''}${euro(diff * 12)}</span></div>
+        <div class="row total"><span class="l">Warmmiete gesamt</span><span class="v">${euro(sumWarm)}</span></div>`;
+    }
+
+    // ---------- Ansicht: Wohnung ----------
+    function wohnung() { return wohnungen.find((w) => w.id === aktuelleId); }
+
+    function oeffne(id) {
+      aktuelleId = id;
+      renderFormular();
+      renderWohnung();
+      zeige('wohnung');
+    }
+
+    function feld(id, label, wert, hint) {
+      return `<div class="form-group">
+        <label for="f-${id}">${label}</label>
+        <input type="text" inputmode="decimal" id="f-${id}" value="${esc(wert)}" oninput="aendere('${id}', this.value)">
+        ${hint ? `<span class="hint">${hint}</span>` : ''}
+      </div>`;
+    }
+
+    function renderFormular() {
+      const w = wohnung();
+      const zOpt = Object.entries(markt.zustand)
+        .map(([k, z]) => `<option value="${k}" ${k === w.zustand ? 'selected' : ''}>${esc(z.text)}</option>`).join('');
+      document.getElementById('w-form').innerHTML = `
+        ${feld('flaeche', 'Wohnfläche (m²)', fmtM2.format(w.flaeche))}
+        <div class="form-group">
+          <label for="f-zustand">Zustand</label>
+          <select id="f-zustand" onchange="aendere('zustand', this.value)">${zOpt}</select>
+        </div>
+        ${feld('aussen', 'Marktwert Außenbereich (€/Monat)', w.aussen, 'Geschätzter Mehrwert von Terrasse, Garten, Hof oder Schuppen. Typisch auf dem Land: 25 bis 75 €.')}
+        <div class="form-row">
+          ${feld('kalt', 'Kaltmiete (€)', w.kalt)}
+          ${feld('zusatz', 'Zusatz (€)', w.zusatz)}
+        </div>
+        <div class="form-row">
+          ${feld('bk', 'Betriebskosten (€)', w.bk)}
+          ${feld('hk', 'Heizkosten (€)', w.hk)}
+        </div>
+        ${w.notiz ? `<span class="hint">${esc(w.notiz)}</span>` : ''}`;
+    }
+
+    function aendere(feldName, wert) {
+      const w = wohnung();
+      if (feldName === 'zustand') w.zustand = wert;
+      else if (feldName === 'flaeche') w.flaeche = dezimal(wert) || 1;
+      else w[feldName] = zahl(wert);
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      szenarioKalt = null;
+      renderWohnung();
+    }
+
+    let szenarioKalt = null;
+
+    function renderWohnung() {
+      const w = wohnung();
+      const a = analyse(w);
+      const mw = a.mw;
+      document.getElementById('w-titel').textContent = w.name;
+      document.getElementById('w-untertitel').textContent =
+        fmtM2.format(w.flaeche) + ' m² · ' + mw.z.text + (w.notiz ? ' · mit Außenbereich' : '');
+
+      // Balken: Marktspanne und eigenes Angebot
+      const lo = Math.min(mw.von, a.angebot) * 0.9;
+      const hi = Math.max(mw.bis, a.angebot) * 1.05;
+      const pos = (x) => ((x - lo) / (hi - lo) * 100).toFixed(1) + '%';
+      const farbe = { red: 'var(--red)', orange: 'var(--orange)', green: 'var(--green)', blue: 'var(--accent)' }[a.b.cls];
+
+      document.getElementById('w-markt').innerHTML = `
+        <div class="row"><span class="l">Bewertung</span><span class="v"><span class="pill ${a.b.cls}">${a.b.text}</span></span></div>
+        <div class="bar">
+          <div class="bar-track"></div>
+          <div class="bar-range" style="left:${pos(mw.von)}; width:calc(${pos(mw.bis)} - ${pos(mw.von)})"></div>
+          <div class="bar-mark" style="left:${pos(a.angebot)}; background:${farbe}"></div>
+        </div>
+        <div class="bar-legend"><span>Marktspanne ${euro(mw.von)} bis ${euro(mw.bis)}</span><span>Strich = Angebot</span></div>
+        <div class="row" style="margin-top:6px"><span class="l">Angebot kalt${w.zusatz ? ' inkl. Zusatz' : ''}<span class="sub">${proM2(a.rate)}</span></span><span class="v">${euro(a.angebot)}</span></div>
+        <div class="row"><span class="l">Marktwert kalt<span class="sub">${proM2(mw.rate)} × ${fmtM2.format(w.flaeche)} m²${w.aussen ? ' + ' + euro(w.aussen) + ' Außenbereich' : ''}</span></span><span class="v">${euro(mw.wert)}</span></div>
+        <div class="row"><span class="l">So setzt sich der m²-Preis zusammen<span class="sub">Basis ${proM2(basis())} × Größe ${fmt2.format(mw.g.faktor)} (${esc(mw.g.text)}) × Zustand ${fmt2.format(mw.z.faktor)}</span></span><span class="v"></span></div>
+        <div class="row"><span class="l">Neben- und Heizkosten<span class="sub">${proM2(a.nkRate)} · Bundesschnitt ${proM2(markt.nebenkosten.gesamtSchnitt)}, hoch ${proM2(markt.nebenkosten.gesamtMax)}</span></span><span class="v">${nkPill(a.nkRate)}</span></div>
+        <div class="row total"><span class="l">Warmmiete aktuell</span><span class="v">${euro(a.warm)}</span></div>`;
+
+      renderSzenario();
+    }
+
+    function nkPill(rate) {
+      const n = markt.nebenkosten;
+      if (rate > n.gesamtMax) return '<span class="pill red">sehr hoch</span>';
+      if (rate > n.gesamtSchnitt * 1.2) return '<span class="pill orange">erhöht</span>';
+      return '<span class="pill green">üblich</span>';
+    }
+
+    function renderSzenario() {
+      const w = wohnung();
+      const mw = marktwert(w);
+      const min = runde5(Math.min(w.kalt, (mw.von - w.zusatz)) * 0.9);
+      const max = runde5(Math.max(w.kalt, mw.bis - w.zusatz) * 1.05);
+      if (szenarioKalt == null) szenarioKalt = w.kalt;
+      const s = analyse(w, szenarioKalt);
+      const diffMonat = w.kalt - szenarioKalt;
+      // Break-even: so viele Monate Leerstand zum alten Preis wiegen die Senkung eines Jahres auf
+      const leerMonat = w.kalt + w.zusatz + w.bk;
+      const breakEven = diffMonat > 0 ? (12 * diffMonat) / leerMonat : 0;
+
+      let fazit;
+      if (diffMonat > 0) {
+        fazit = `Die Senkung kostet ${euro(diffMonat * 12)} im Jahr. Bleibt die Wohnung zum alten Preis nur <b>${fmt1.format(breakEven)} Monate</b> länger leer, hast du mehr verloren. Bei Leerstand zahlst du die Betriebskosten selbst.`;
+      } else if (diffMonat < 0) {
+        fazit = `Die Erhöhung bringt ${euro(-diffMonat * 12)} mehr im Jahr, erschwert aber die Vermietung.`;
+      } else {
+        fazit = 'Schiebe den Regler, um eine andere Kaltmiete durchzuspielen.';
+      }
+
+      document.getElementById('w-szenario').innerHTML = `
+        <label for="s-kalt">Kaltmiete testen: ${euro(szenarioKalt)}</label>
+        <input type="range" id="s-kalt" min="${min}" max="${max}" step="5" value="${szenarioKalt}" oninput="szenarioKalt = Number(this.value); renderSzenario()">
+        <div class="row"><span class="l">Neuer m²-Preis${w.zusatz ? ' inkl. Zusatz' : ''}</span><span class="v">${proM2(s.rate)}</span></div>
+        <div class="row"><span class="l">Neue Warmmiete</span><span class="v">${euro(s.warm)}</span></div>
+        <div class="row"><span class="l">Bewertung</span><span class="v"><span class="pill ${s.b.cls}">${s.b.text}</span></span></div>
+        <p class="hint" style="font-size:14px">${fazit}</p>
+        <button class="btn secondary" onclick="szenarioKalt = ${runde5(mw.wert - w.zusatz)}; renderSzenario()">Marktwert einstellen</button>
+        <button class="btn" onclick="uebernehmen()">Als neues Angebot übernehmen</button>`;
+    }
+
+    function uebernehmen() {
+      const w = wohnung();
+      w.kalt = szenarioKalt;
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      renderFormular();
+      renderWohnung();
+    }
+
+    function wohnungZuruecksetzen() {
+      if (!confirm('Alle Änderungen dieser Wohnung verwerfen und die Anzeigenwerte wiederherstellen?')) return;
+      const i = wohnungen.findIndex((w) => w.id === aktuelleId);
+      wohnungen[i] = kopie(ANZEIGE.find((w) => w.id === aktuelleId));
+      speichern(KEY_WOHNUNGEN, wohnungen);
+      szenarioKalt = null;
+      renderFormular();
+      renderWohnung();
+    }
+
+    // ---------- Ansicht: Markt ----------
+    function renderMarkt() {
+      if (!markt) return;
+      const alter = tageSeit(markt.stand);
+      document.getElementById('m-stand').textContent = 'Stand ' + datum(markt.stand) + ' · ' + (alter <= 0 ? 'heute' : 'vor ' + alter + ' Tagen');
+      const n = markt.nebenkosten;
+      const vergleich = markt.vergleich.map((v) => `
+        <div class="row">
+          <span class="l">${esc(v.name)}<span class="sub source"><a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(v.quelle)}</a></span></span>
+          <span class="v">${v.wert != null ? proM2(v.wert) : esc(v.text) + ' €/m²'}</span>
+        </div>`).join('');
+      const groesse = markt.groesse.map((g) => `<div class="row"><span class="l">${esc(g.text)}</span><span class="v">× ${fmt2.format(g.faktor)}</span></div>`).join('');
+      const zustand = Object.values(markt.zustand).map((z) => `<div class="row"><span class="l">${esc(z.text)}</span><span class="v">× ${fmt2.format(z.faktor)}</span></div>`).join('');
+      const hinweise = markt.hinweise.map((h) => `<p class="hint" style="font-size:14px">${esc(h)}</p>`).join('');
+
+      document.getElementById('m-inhalt').innerHTML = `
+        ${alter > 90 ? `<div class="banner orange">Die Daten sind älter als drei Monate.</div>` : ''}
+        <div class="card">
+          <div class="row total"><span class="l">Basiswert Hohenaspe kalt</span><span class="v">${proM2(markt.basis)}</span></div>
+          <div class="row"><span class="l">Übliche Spanne</span><span class="v">${proM2(markt.spanne[0])} bis ${proM2(markt.spanne[1])}</span></div>
+          <p class="hint" style="font-size:14px">${esc(markt.basisBegruendung)}</p>
+        </div>
+
+        <h2>Eigener Basiswert</h2>
+        <div class="card">
+          <div class="toggle-row">
+            <span class="toggle-label">Eigenen Basiswert nutzen</span>
+            <label class="switch">
+              <input type="checkbox" id="m-eigen-an" ${eigeneBasis != null ? 'checked' : ''} onchange="eigeneBasisSchalten(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="collapsible" style="display:${eigeneBasis != null ? 'block' : 'none'}" id="m-eigen-box">
+            <div class="form-group">
+              <label for="m-eigen">Basiswert kalt (€/m²)</label>
+              <input type="text" inputmode="decimal" id="m-eigen" value="${fmt2.format(eigeneBasis != null ? eigeneBasis : markt.basis)}" oninput="eigeneBasisSetzen(this.value)">
+              <span class="hint">Gilt für alle Wohnungen anstelle des recherchierten Werts.</span>
+            </div>
+          </div>
+        </div>
+
+        <h2>Vergleichswerte (Angebotsmieten kalt)</h2>
+        <div class="card">${vergleich}</div>
+
+        <h2>Neben- und Heizkosten</h2>
+        <div class="card">
+          <div class="row"><span class="l">Betriebskosten ohne Heizung</span><span class="v">${proM2(n.bkSchnitt)}</span></div>
+          <div class="row"><span class="l">Heizung und Warmwasser</span><span class="v">${proM2(n.hkSchnitt)}</span></div>
+          <div class="row"><span class="l">Gesamt, Durchschnitt</span><span class="v">${proM2(n.gesamtSchnitt)}</span></div>
+          <div class="row"><span class="l">Gesamt, alle Positionen</span><span class="v">${proM2(n.gesamtMax)}</span></div>
+          <span class="hint source"><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.quelle)}</a></span>
+        </div>
+
+        <h2>Faktoren der Marktschätzung</h2>
+        <div class="card">${groesse}</div>
+        <div class="card">${zustand}</div>
+
+        <h2>Hinweise</h2>
+        <div class="card">${hinweise}</div>
+
+        <div class="banner blue">
+          <b>Marktdaten aktualisieren:</b> Die App lädt beim Start automatisch die neuesten Marktdaten, sobald sie aktualisiert wurden. Die Recherche selbst macht Claude: einfach im Chat „Marktdaten aktualisieren“ schreiben.
+        </div>`;
+    }
+
+    function eigeneBasisSchalten(an) {
+      eigeneBasis = an ? markt.basis : null;
+      speichern(KEY_BASIS, eigeneBasis);
+      document.getElementById('m-eigen-box').style.display = an ? 'block' : 'none';
+      if (an) {
+        const f = document.getElementById('m-eigen');
+        f.value = fmt2.format(markt.basis);
+        f.focus();
       }
     }
 
-    function parseNumber(value) {
-      return parseFloat(String(value).replace(',', '.'));
+    function eigeneBasisSetzen(wert) {
+      const n = dezimal(wert);
+      if (n > 0) { eigeneBasis = n; speichern(KEY_BASIS, eigeneBasis); }
     }
 
-    function calculate() {
-      const livingArea = parseFloat(document.getElementById('living-area').value) || 0;
-      const hasTerrace = document.getElementById('terrace-toggle').checked;
-      const terraceArea = parseFloat(document.getElementById('terrace-area').value) || 0;
-      const terraceFactor = parseFloat(document.getElementById('terrace-factor').value) || 0.25;
-
-      const isCustom = document.getElementById('custom-toggle').checked;
-      document.getElementById('custom-details').style.display = isCustom ? 'block' : 'none';
-      document.getElementById('renovation').disabled = isCustom;
-      document.getElementById('location').disabled = isCustom;
-
-      // Eigener Preis gilt als Endpreis, daher ohne Lagezuschlag
-      const basePrice = isCustom
-        ? (parseNumber(document.getElementById('custom-rate').value) || 0)
-        : (parseFloat(document.getElementById('renovation').value) || 8.70);
-      const locationOffset = isCustom ? 0 : (parseFloat(document.getElementById('location').value) || 0.00);
-
-      // Anrechenbare Fläche
-      const creditedTerraceArea = hasTerrace ? (terraceArea * terraceFactor) : 0;
-      const totalCreditedArea = livingArea + creditedTerraceArea;
-
-      // Quadratmeterpreis
-      const finalRate = basePrice + locationOffset;
-
-      // Kaltmiete & Nebenkosten
-      const coldExact = totalCreditedArea * finalRate;
-      const coldRounded = Math.round(coldExact / 5) * 5; // Glättung auf 5 €
-
-      const nkRate = 3.00;
-      const nkExact = totalCreditedArea * nkRate;
-      const nkRounded = Math.round(nkExact / 5) * 5;
-
-      const warmTotal = coldRounded + nkRounded;
-
-      // DOM-Update
-      document.getElementById('res-area').innerText = totalCreditedArea.toFixed(2).replace('.', ',') + ' m²';
-      document.getElementById('res-rate').innerText = finalRate.toFixed(2).replace('.', ',') + ' €/m²';
-
-      document.getElementById('res-cold').innerText = coldRounded.toFixed(2).replace('.', ',') + ' €';
-      document.getElementById('res-cold-exact').innerText = 'exakt: ' + coldExact.toFixed(2).replace('.', ',') + ' €';
-
-      document.getElementById('res-nk').innerText = nkRounded.toFixed(2).replace('.', ',') + ' €';
-      document.getElementById('res-nk-exact').innerText = 'exakt: ' + nkExact.toFixed(2).replace('.', ',') + ' €';
-
-      document.getElementById('res-warm').innerText = warmTotal.toFixed(2).replace('.', ',') + ' €';
-
-      saveInputs();
+    // ---------- Teilen ----------
+    function teilen() {
+      const zeilen = ['Mietkalkulator Hohenaspe, Stand ' + new Date().toLocaleDateString('de-DE'), ''];
+      let summe = 0, summeMarkt = 0;
+      wohnungen.forEach((w) => {
+        const a = analyse(w);
+        summe += a.angebot; summeMarkt += a.mw.wert;
+        zeilen.push(`${w.name} (${fmtM2.format(w.flaeche)} m²): kalt ${euro(a.angebot)} (${proM2(a.rate)}), warm ${euro(a.warm)}, Markt ca. ${euro(a.mw.von)} bis ${euro(a.mw.bis)}, ${a.b.text}`);
+      });
+      zeilen.push('', `Summe kalt: ${euro(summe)}, Marktschätzung: ${euro(summeMarkt)}`);
+      zeilen.push('https://larsschniete.github.io/Temperaturrechner/mietkalkulator/');
+      const text = zeilen.join('\n');
+      if (navigator.share) {
+        navigator.share({ title: 'Mietkalkulator', text }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => alert('Übersicht in die Zwischenablage kopiert.'));
+      }
     }
 
-    // Initiale Ausführung
-    loadInputs();
-    calculate();
+    // ---------- Schnellrechner ----------
+    function rechne() {
+      const id = (x) => document.getElementById(x);
+      const eigenAn = id('r-eigen-an').checked;
+      const terrasseAn = id('r-terrasse-an').checked;
+      id('r-eigen-box').style.display = eigenAn ? 'block' : 'none';
+      id('r-terrasse-box').style.display = terrasseAn ? 'block' : 'none';
+      id('r-lage').disabled = eigenAn;
+      id('r-zustand').disabled = eigenAn;
 
-    // Offline-Fähigkeit
+      const flaeche = dezimal(id('r-flaeche').value);
+      const terrasse = terrasseAn ? dezimal(id('r-terrasse').value) * parseFloat(id('r-faktor').value) : 0;
+      const gesamt = flaeche + terrasse;
+      const rate = eigenAn ? dezimal(id('r-eigen').value) : parseFloat(id('r-zustand').value) + parseFloat(id('r-lage').value);
+      const kalt = gesamt * rate;
+      const nk = gesamt * 3;
+      id('r-ergebnis').innerHTML = `
+        <div class="row"><span class="l">Anrechenbare Fläche</span><span class="v">${fmt2.format(gesamt)} m²</span></div>
+        <div class="row"><span class="l">Quadratmeterpreis kalt</span><span class="v">${proM2(rate)}</span></div>
+        <div class="row"><span class="l">Kaltmiete<span class="sub">exakt: ${fmt2.format(kalt)} €</span></span><span class="v">${euro(runde5(kalt))}</span></div>
+        <div class="row"><span class="l">Nebenkosten (ca. 3 €/m²)<span class="sub">exakt: ${fmt2.format(nk)} €</span></span><span class="v">${euro(runde5(nk))}</span></div>
+        <div class="row total"><span class="l">Warmmiete gesamt</span><span class="v">${euro(runde5(kalt) + runde5(nk))}</span></div>`;
+
+      const daten = {};
+      ['r-flaeche', 'r-eigen', 'r-terrasse'].forEach((k) => (daten[k] = id(k).value));
+      ['r-lage', 'r-zustand', 'r-faktor'].forEach((k) => (daten[k] = id(k).selectedIndex));
+      ['r-eigen-an', 'r-terrasse-an'].forEach((k) => (daten[k] = id(k).checked));
+      speichern(KEY_RECHNER, daten);
+    }
+
+    function rechnerLaden() {
+      const d = laden(KEY_RECHNER);
+      if (!d) return;
+      Object.entries(d).forEach(([k, v]) => {
+        const el = document.getElementById(k);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = !!v;
+        else if (el.tagName === 'SELECT') { if (v >= 0 && v < el.options.length) el.selectedIndex = v; }
+        else el.value = v;
+      });
+    }
+
+    // ---------- Marktdaten laden ----------
+    async function holeJson(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }
+
+    async function marktLaden() {
+      const kandidaten = await Promise.allSettled([holeJson('marktdaten.json'), holeJson(RAW_URL)]);
+      const gueltig = kandidaten.filter((k) => k.status === 'fulfilled' && k.value && k.value.basis).map((k) => k.value);
+      if (!gueltig.length) {
+        document.getElementById('markt-banner').innerHTML =
+          '<div class="banner orange">Marktdaten konnten nicht geladen werden. Bitte einmal mit Internetverbindung öffnen.</div>';
+        return;
+      }
+      gueltig.sort((a, b) => b.stand.localeCompare(a.stand));
+      markt = gueltig[0];
+      renderHaus();
+      if (document.getElementById('view-markt').classList.contains('active')) renderMarkt();
+    }
+
+    // ---------- Start ----------
+    rechnerLaden();
+    rechne();
+    marktLaden();
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
