@@ -1,8 +1,8 @@
 {
   "stand": "2026-10-11",
   "ort": "Hohenaspe",
-  "basis": 8.7,
-  "basisBegruendung": "Hohenaspe: Portaldurchschnitt 8,45 bis 8,87 €/m², aktuelle Inserate im Ort etwa 6,70 bis 10,30 €/m² (Mittel rund 8,60 €/m²). Itzehoe liegt als Stadt mit 8,44 bis 9,77 €/m² etwas höher. Basiswert: mittelgroße Wohnung, normaler Zustand, Hohenaspe. Angebotsmieten liegen erfahrungsgemäß etwas über den tatsächlich vereinbarten Mieten.",
+  "basis": 8.8,
+  "basisBegruendung": "Hohenaspe: Portaldurchschnitte 8,45 bis 8,87 €/m². Die aktuellen fremden Einzelinserate (Immowelt und weitere Portale) liegen im Mittel bei 8,88 €/m² (Median 9,36 €/m²). Eigene Inserate auf Kleinanzeigen sind herausgerechnet. Itzehoe-Inserate liegen im Median bei 10,00 €/m², die Stadt ist aber teurer als das Umland. Basiswert für eine mittelgroße Wohnung in normalem Zustand: 8,80 €/m². Angebotsmieten liegen erfahrungsgemäß etwas über den tatsächlich vereinbarten Mieten.",
   "spanne": [
     6.7,
     10.5
@@ -58,6 +58,12 @@
   },
   "vergleich": [
     {
+      "name": "Hohenaspe, fremde Einzelinserate Okt. 2026 (5 Stück), Mittel",
+      "wert": 8.88,
+      "quelle": "Immowelt, wohnungsboerse.net u. a.",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/hohenaspe-25582/ad08de979"
+    },
+    {
       "name": "Hohenaspe, Ø Angebotsmiete 2026",
       "wert": 8.87,
       "quelle": "miet-check.de",
@@ -70,16 +76,22 @@
       "url": "https://atlas.immobilienscout24.de/orte/deutschland/schleswig-holstein/steinburg-kreis/hohenaspe/sch%C3%B6ne-aussicht"
     },
     {
-      "name": "Hohenaspe, Einzelinserate Okt. 2026 (4 Stück)",
-      "text": "ca. 6,70 bis 10,30",
-      "quelle": "immosuchmaschine.de / wohnungsboerse.net",
-      "url": "https://www.immosuchmaschine.de/g/25582-hohenaspe/wohnung-mieten"
-    },
-    {
       "name": "Itzehoe, Q2/2026",
       "wert": 8.86,
       "quelle": "ImmoScout24",
       "url": "https://www.immobilienscout24.de/immobilienpreise/schleswig-holstein/steinburg-kreis/itzehoe/mietspiegel"
+    },
+    {
+      "name": "Itzehoe, Einzelinserate Okt. 2026 (9 Stück), Median",
+      "wert": 10.0,
+      "quelle": "Immowelt, ImmoScout24, Kleinanzeigen",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "name": "Itzehoe, Ø Angebotsmiete 2026",
+      "wert": 10.02,
+      "quelle": "miet-check.de",
+      "url": "https://www.miet-check.de/wohnung-mieten/itzehoe/"
     },
     {
       "name": "Itzehoe, mittlere Lage 2026",
@@ -101,10 +113,180 @@
     }
   ],
   "hinweise": [
-    "Alle Werte sind Angebotsmieten aus Immobilienportalen. Für Hohenaspe gibt es keinen amtlichen Mietspiegel.",
+    "Alle Werte sind Angebotsmieten aus Immobilienportalen (Kleinanzeigen, ImmoScout24, Immowelt u. a.). Für Hohenaspe gibt es keinen amtlichen Mietspiegel.",
+    "Ein Inserat, das schon lange online ist, spricht eher für einen zu hohen Preis. Angebotsmiete heißt nicht, dass zu diesem Preis vermietet wurde.",
+    "Eure eigenen Inserate (Kleinanzeigen, Hohenaspe) sind aus allen Vergleichswerten herausgerechnet.",
     "In Hohenaspe werden nur sehr wenige Wohnungen inseriert. Einzelwerte schwanken deshalb stark.",
     "Größen- und Zustandsfaktoren sind fachliche Schätzwerte. Die Portale zeigen beim Größeneinfluss kein einheitliches Bild.",
     "Eine Mietpreisbremse gilt in Schleswig-Holstein seit 2019 nicht mehr (Stand 2026). Bei Neuvermietung ist die Miethöhe weitgehend frei vereinbar. Grenzen setzen nur die Mietpreisüberhöhung (§ 5 WiStG) und der Mietwucher (§ 291 StGB).",
     "Die abgesenkte Kappungsgrenze von 15 % (seit 1.5.2024) betrifft nur Mieterhöhungen in laufenden Verträgen und nach den verfügbaren Listen weder Hohenaspe noch Itzehoe."
+  ],
+  "inserate": [
+    {
+      "ort": "Hohenaspe",
+      "flaeche": 59.2,
+      "kalt": 595,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/hohenaspe-25582/ad08de979"
+    },
+    {
+      "ort": "Hohenaspe",
+      "flaeche": 89,
+      "kalt": 600,
+      "zimmer": "2",
+      "text": "Renoviert",
+      "quelle": "immosuchmaschine.de",
+      "url": "https://www.immosuchmaschine.de/g/25582-hohenaspe/wohnung-mieten"
+    },
+    {
+      "ort": "Hohenaspe",
+      "flaeche": 50.19,
+      "kalt": 470,
+      "zimmer": "2",
+      "text": "Modern",
+      "quelle": "immosuchmaschine.de",
+      "url": "https://www.immosuchmaschine.de/g/25582-hohenaspe/wohnung-mieten"
+    },
+    {
+      "ort": "Hohenaspe",
+      "flaeche": 74,
+      "kalt": 590,
+      "zimmer": "2,5",
+      "text": "Mit Balkon",
+      "quelle": "wohnungsboerse.net",
+      "url": "https://www.wohnungsboerse.net/Hohenaspe/mieten/wohnungen"
+    },
+    {
+      "ort": "Hohenaspe",
+      "flaeche": 34,
+      "kalt": 350,
+      "zimmer": "1",
+      "text": "",
+      "quelle": "wohnungsboerse.net",
+      "url": "https://www.wohnungsboerse.net/Hohenaspe/mieten/wohnungen"
+    },
+    {
+      "ort": "Hohenlockstedt",
+      "flaeche": 73,
+      "kalt": 600,
+      "zimmer": "2",
+      "text": "Frei ab 01.11.2026",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/hohenlockstedt-25551/ad08de1043"
+    },
+    {
+      "ort": "Hohenlockstedt/Kellinghusen",
+      "flaeche": 65,
+      "kalt": 850,
+      "zimmer": "2",
+      "text": "Erstbezug mit Terrasse",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/kellinghusen-25548/ad08de1044"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 91,
+      "kalt": 1000,
+      "zimmer": "3",
+      "text": "",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 75,
+      "kalt": 787.5,
+      "zimmer": "3",
+      "text": "",
+      "quelle": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/Suche/de/schleswig-holstein/steinburg-kreis/wohnung-mieten"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 60.4,
+      "kalt": 545,
+      "zimmer": "3",
+      "text": "EG",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 54,
+      "kalt": 425,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 51.9,
+      "kalt": 571,
+      "zimmer": "2",
+      "text": "EG",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 50.3,
+      "kalt": 403,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 45.5,
+      "kalt": 350,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-wohnung-mieten/itzehoe/wohnung-----mieten/k0c203l820"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 41,
+      "kalt": 450,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/Suche/de/schleswig-holstein/steinburg-kreis/wohnung-mieten"
+    },
+    {
+      "ort": "Itzehoe",
+      "flaeche": 39.3,
+      "kalt": 393,
+      "zimmer": "2",
+      "text": "",
+      "quelle": "Immowelt",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    }
+  ],
+  "portale": [
+    {
+      "name": "Kleinanzeigen: Hohenaspe (inkl. eurer eigenen Anzeigen)",
+      "url": "https://www.kleinanzeigen.de/s-hohenaspe/wohnung/k0l20095"
+    },
+    {
+      "name": "Kleinanzeigen: Itzehoe",
+      "url": "https://www.kleinanzeigen.de/s-wohnung-mieten/itzehoe/wohnung-----mieten/k0c203l820"
+    },
+    {
+      "name": "ImmoScout24: Kreis Steinburg",
+      "url": "https://www.immobilienscout24.de/Suche/de/schleswig-holstein/steinburg-kreis/wohnung-mieten"
+    },
+    {
+      "name": "Immowelt: Hohenaspe",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/hohenaspe-25582/ad08de979"
+    },
+    {
+      "name": "Immowelt: Itzehoe",
+      "url": "https://www.immowelt.de/suche/mieten/wohnung/schleswig-holstein/itzehoe-25524/ad08de948"
+    }
   ]
 }
