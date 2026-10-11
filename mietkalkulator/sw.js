@@ -1,9 +1,10 @@
 // Offline-Cache: bei Aenderungen an den Dateien die Versionsnummer erhoehen
-const CACHE = 'mietkalkulator-v3';
+const CACHE = 'mietkalkulator-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './marktdaten.json',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
