@@ -104,7 +104,7 @@
       letter-spacing: -0.2px;
       margin-bottom: 6px;
     }
-    input[type="text"], select {
+    input[type="text"], input[type="month"], select {
       width: 100%;
       height: 44px;
       padding: 8px 12px;
@@ -116,7 +116,7 @@
       outline: none;
       -webkit-appearance: none;
     }
-    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+    input[type="text"]:focus, input[type="month"]:focus, select:focus { border-color: var(--accent); }
     select:disabled { opacity: 0.4; }
     input[type="range"] { width: 100%; accent-color: var(--accent); height: 32px; }
     .hint {
@@ -379,7 +379,7 @@
     <div class="card" id="r-ergebnis"></div>
   </section>
 
-  <p class="version">Version 4</p>
+  <p class="version">Version 5</p>
 
   <nav class="tabbar">
     <button id="tab-haus" class="active" onclick="zeige('haus')">
@@ -428,15 +428,14 @@
       try { localStorage.setItem(key, JSON.stringify(wert)); } catch (e) {}
     }
     function zahl(v) {
-      const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+      const s = String(v).trim();
+      // Punkte nur dann als Tausendertrenner werten, wenn sie Dreiergruppen trennen
+      const ohneTausender = /^\d{1,3}(\.\d{3})+(,\d*)?$/.test(s) ? s.replace(/\./g, '') : s;
+      const n = parseFloat(ohneTausender.replace(',', '.'));
       return isNaN(n) ? 0 : n;
     }
     // Dezimalfelder: Punkt als Dezimaltrenner zulassen, wenn kein Komma da ist
-    function dezimal(v) {
-      const s = String(v).trim();
-      const n = s.includes(',') ? parseFloat(s.replace(/\./g, '').replace(',', '.')) : parseFloat(s);
-      return isNaN(n) ? 0 : n;
-    }
+    function dezimal(v) { return zahl(v); }
     const fmtEuro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
     const fmt2 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmt1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -478,6 +477,16 @@
       return { cls: 'green', text: 'marktgerecht' };
     }
 
+    // Leerstand: entgangene Kaltmiete plus selbst getragene Betriebskosten
+    function leerstand(w) {
+      if (!w.frei) return null;
+      const [y, m] = w.frei.split('-').map(Number);
+      const jetzt = new Date();
+      const monate = (jetzt.getFullYear() - y) * 12 + (jetzt.getMonth() + 1 - m);
+      if (monate < 0) return null;
+      return { monate, kosten: monate * (w.kalt + w.zusatz + w.bk) };
+    }
+
     function analyse(w, kalt) {
       const k = kalt != null ? kalt : w.kalt;
       const mw = marktwert(w);
@@ -511,18 +520,20 @@
         ? `<div class="banner orange">Die Marktdaten sind ${alter} Tage alt (Stand ${datum(markt.stand)}). Bitte aktualisieren lassen, siehe Reiter „Markt“.</div>`
         : '';
 
-      let sumAngebot = 0, sumMarkt = 0, sumWarm = 0;
+      let sumAngebot = 0, sumMarkt = 0, sumWarm = 0, sumLeer = 0, anzahlLeer = 0;
       let html = '';
       wohnungen.forEach((w) => {
         const a = analyse(w);
         sumAngebot += a.angebot; sumMarkt += a.mw.wert; sumWarm += a.warm;
+        const ls = leerstand(w);
+        if (ls) { sumLeer += ls.kosten; anzahlLeer++; }
         html += `
           <button class="unit" onclick="oeffne(${w.id})">
             <div class="unit-head">
               <span class="unit-name">${esc(w.name)}</span>
               <span><span class="pill ${a.b.cls}">${a.b.text}</span> <span class="chev">›</span></span>
             </div>
-            <div class="unit-meta">${fmtM2.format(w.flaeche)} m² · ${esc(a.mw.z.text)}</div>
+            <div class="unit-meta">${fmtM2.format(w.flaeche)} m² · ${esc(a.mw.z.text)}${ls ? ` · <span style="color:var(--red)">frei seit ${ls.monate} Mon., ca. ${euro(ls.kosten)} entgangen</span>` : ''}</div>
             <div class="unit-nums">
               <span>Angebot kalt<br><b>${euro(a.angebot)}</b></span>
               <span>Markt kalt<br><b>${euro(a.mw.wert)}</b></span>
@@ -538,6 +549,7 @@
         <div class="row"><span class="l">Kaltmiete Marktschätzung</span><span class="v">${euro(sumMarkt)}</span></div>
         <div class="row"><span class="l">Differenz pro Monat</span><span class="v">${diff >= 0 ? '+' : ''}${euro(diff)}</span></div>
         <div class="row"><span class="l">Differenz pro Jahr</span><span class="v">${diff >= 0 ? '+' : ''}${euro(diff * 12)}</span></div>
+        ${anzahlLeer ? `<div class="row"><span class="l">Leerstand bisher (${anzahlLeer} ${anzahlLeer === 1 ? 'Wohnung' : 'Wohnungen'})<span class="sub">entgangene Kaltmiete + selbst getragene Betriebskosten</span></span><span class="v" style="color:var(--red)">${euro(sumLeer)}</span></div>` : ''}
         <div class="row total"><span class="l">Warmmiete gesamt</span><span class="v">${euro(sumWarm)}</span></div>`;
     }
 
@@ -578,13 +590,18 @@
           ${feld('bk', 'Betriebskosten (€)', w.bk)}
           ${feld('hk', 'Heizkosten (€)', w.hk)}
         </div>
+        <div class="form-group">
+          <label for="f-frei">Frei seit (leer lassen, wenn vermietet)</label>
+          <input type="month" id="f-frei" value="${esc(w.frei || '')}" onchange="aendere('frei', this.value)">
+        </div>
         ${w.notiz ? `<span class="hint">${esc(w.notiz)}</span>` : ''}`;
     }
 
     function aendere(feldName, wert) {
       const w = wohnung();
       if (feldName === 'zustand') w.zustand = wert;
-      else if (feldName === 'flaeche') w.flaeche = dezimal(wert) || 1;
+      else if (feldName === 'flaeche') { const f = dezimal(wert); if (f < 10) return; w.flaeche = f; }
+      else if (feldName === 'frei') w.frei = wert;
       else w[feldName] = zahl(wert);
       speichern(KEY_WOHNUNGEN, wohnungen);
       szenarioKalt = null;
@@ -619,6 +636,7 @@
         <div class="row"><span class="l">Marktwert kalt<span class="sub">${proM2(mw.rate)} × ${fmtM2.format(w.flaeche)} m²${w.aussen ? ' + ' + euro(w.aussen) + ' Außenbereich' : ''}</span></span><span class="v">${euro(mw.wert)}</span></div>
         <div class="row"><span class="l">So setzt sich der m²-Preis zusammen<span class="sub">Basis ${proM2(basis())} × Größe ${fmt2.format(mw.g.faktor)} (${esc(mw.g.text)}) × Zustand ${fmt2.format(mw.z.faktor)}</span></span><span class="v"></span></div>
         <div class="row"><span class="l">Neben- und Heizkosten<span class="sub">${proM2(a.nkRate)} · Bundesschnitt ${proM2(markt.nebenkosten.gesamtSchnitt)}, hoch ${proM2(markt.nebenkosten.gesamtMax)}</span></span><span class="v">${nkPill(a.nkRate)}</span></div>
+        ${a.nkRate > markt.nebenkosten.gesamtSchnitt * 1.2 ? `<p class="hint">Vorauszahlungen dürfen nur in angemessener Höhe vereinbart werden (§ 556 Abs. 2 BGB). Liegen eure tatsächlichen Kosten niedriger, senkt eine realistische Vorauszahlung die Warmmiete in der Anzeige, ohne dass ihr Geld verliert.</p>` : ''}
         <div class="row total"><span class="l">Warmmiete aktuell</span><span class="v">${euro(a.warm)}</span></div>`;
 
       renderSzenario();
@@ -639,13 +657,14 @@
       if (szenarioKalt == null) szenarioKalt = w.kalt;
       const s = analyse(w, szenarioKalt);
       const diffMonat = w.kalt - szenarioKalt;
-      // Break-even: so viele Monate Leerstand zum alten Preis wiegen die Senkung eines Jahres auf
+      // Gewinnschwelle: alter Preis A mit Y Monaten Leerstand gegen neuen Preis B ab sofort,
+      // betrachtet über H Monate: A·(H − Y) − Y·BK = H·B  ⇒  Y = H·(A − B) / (A + BK)
       const leerMonat = w.kalt + w.zusatz + w.bk;
-      const breakEven = diffMonat > 0 ? (12 * diffMonat) / leerMonat : 0;
+      const schwelle = (h) => (h * diffMonat) / leerMonat;
 
       let fazit;
       if (diffMonat > 0) {
-        fazit = `Die Senkung kostet ${euro(diffMonat * 12)} im Jahr. Bleibt die Wohnung zum alten Preis nur <b>${fmt1.format(breakEven)} Monate</b> länger leer, hast du mehr verloren. Bei Leerstand zahlst du die Betriebskosten selbst.`;
+        fazit = `Die Senkung bringt ${euro(diffMonat)} weniger pro Monat. Sie lohnt sich trotzdem, wenn die Wohnung dadurch schneller vermietet wird, und zwar um mindestens <b>${fmt1.format(schwelle(12))} Monate</b> (auf 1 Jahr gerechnet) bzw. <b>${fmt1.format(schwelle(36))} Monate</b> (auf 3 Jahre gerechnet). Bei Leerstand zahlst du die Betriebskosten selbst.`;
       } else if (diffMonat < 0) {
         fazit = `Die Erhöhung bringt ${euro(-diffMonat * 12)} mehr im Jahr, erschwert aber die Vermietung.`;
       } else {
